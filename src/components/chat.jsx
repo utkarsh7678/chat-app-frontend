@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
-import "./Chat.css";
+import "./chat.css";
 
 const Chat = () => {
     const [messages, setMessages] = useState([]);
