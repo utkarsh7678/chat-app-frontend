@@ -16,7 +16,11 @@ const Register = () => {
     // Send OTP to Email
     const sendOtp = async () => {
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/send-otp`, { email });
+            if (!email) {
+                setMessage("❌ Please enter your email");
+                return;
+              }
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/send-otp`, { email: email.toLowerCase()});
             setMessage(response.data.message);
             setOtpSent(true);
         } catch (error) {
@@ -27,10 +31,21 @@ const Register = () => {
     // Register User
     const handleRegister = async (e) => {
         e.preventDefault();
+        if (!username || !email || !password || !otp) {
+            setMessage("❌ All fields are required");
+            return;
+          }
+          console.log("Registering with:", {
+            username,
+            email,
+            password,
+            otp,
+          });
+      
         try {
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
                 username,
-                email,
+                email: email.toLowerCase(),
                 password,
                 otp
             });
@@ -94,7 +109,7 @@ const Register = () => {
                 </button>
             </div>
 
-            <button type="submit" className="btn btn-success" onClick={handleRegister}>
+            <button type="submit" className="btn btn-success" onClick={handleRegister}  disabled={!otpSent}>
                 ✅ Register
             </button>
 
