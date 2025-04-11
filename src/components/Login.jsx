@@ -15,7 +15,7 @@ const Login = () => {
         console.log("Login form submitted");
         setLoading(true);
         try {
-            const response = await axios.post("http://localhost:3000/auth/login", { email, password });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email, password });
             console.log("Response received:", response.data);
             if (response.data.token) {
                 localStorage.setItem("token", response.data.token); 
