@@ -13,7 +13,7 @@ const ForgotPassword = () => {
     const sendOtp = async () => {
         try {
             const lowerCaseEmail = email.toLowerCase(); // Convert email to lowercase before sending
-            const response = await axios.post("http://localhost:3000/auth/send-reset-otp", { email: lowerCaseEmail, purpose: "reset-password" });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/send-reset-otp`, { email: lowerCaseEmail, purpose: "reset-password" });
 
             setOtpSent(true);
             alert(response.data.message || "✅ OTP sent to your email");
@@ -26,7 +26,7 @@ const ForgotPassword = () => {
     const resetPassword = async () => {
         try {
             const lowerCaseEmail = email.toLowerCase(); // Convert email to lowercase
-            const response = await axios.post("http://localhost:3000/auth/reset-password", { email: lowerCaseEmail, otp, newPassword });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/reset-password`, { email: lowerCaseEmail, otp, newPassword });
 
             alert(response.data.message || "✅ Password reset successfully!");
             navigate("/login");

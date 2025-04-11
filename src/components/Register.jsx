@@ -16,7 +16,7 @@ const Register = () => {
     // Send OTP to Email
     const sendOtp = async () => {
         try {
-            const response = await axios.post("http://localhost:3000/auth/send-otp", { email });
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/send-otp`, { email });
             setMessage(response.data.message);
             setOtpSent(true);
         } catch (error) {
@@ -28,7 +28,7 @@ const Register = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post("http://localhost:3000/auth/register", {
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, {
                 username,
                 email,
                 password,
