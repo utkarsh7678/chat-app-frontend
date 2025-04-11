@@ -1,0 +1,81 @@
+/* Full-screen centering */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Login form styling */
+.login-form {
+    width: 350px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+/* Input fields */
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+/* Show/hide password */
+.show-password {
+    display: block;
+    text-align: right;
+    font-size: 14px;
+    cursor: pointer;
+    color: #007bff;
+}
+
+/* Login button */
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s ease-in-out;
+}
+
+.btn-login:hover {
+    background-color: #218838;
+}
+
+/* Forgot password and register links */
+.forgot-password, .register-link {
+    font-size: 14px;
+    color: #007bff;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.forgot-password:hover, .register-link:hover {
+    text-decoration: underline;
+}
+
