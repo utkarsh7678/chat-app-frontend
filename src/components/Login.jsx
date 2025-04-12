@@ -16,6 +16,8 @@ const Login = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
                 email,
                 password
