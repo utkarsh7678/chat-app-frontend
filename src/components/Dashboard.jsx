@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from '../context/socketContext'; // Import useSocket
 import "./dashboard.css";
 
 const Dashboard = () => {
-  const [activeUsers, setActiveUsers] = useState([]);
+
   const [groups, setGroups] = useState([]);
   const [friends, setFriends] = useState([]);
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
+  const { activeUsers: socketActiveUsers, socketConnected, socket } = useSocket();
 
   const token = localStorage.getItem("token");
 
@@ -23,14 +25,15 @@ const Dashboard = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [activeUserRes, groupRes, friendsRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/api/users/active`, { headers }),
+         
           axios.get(`${import.meta.env.VITE_API_URL}/api/groups`, { headers }),
           axios.get(`${import.meta.env.VITE_API_URL}/api/friends`, { headers }),
         ]);
 
-        setActiveUsers(activeUserRes.data);
+       
         setGroups(groupRes.data);
         setFriends(friendsRes.data);
+        socket.emit("user-online");
       } catch (err) {
         console.error("❌ Error fetching dashboard data:", err);
       }
@@ -62,10 +65,10 @@ const Dashboard = () => {
       <h2>Welcome to ChatApp Dashboard</h2>
 
       <div className="section">
-        <h3>Active People</h3>
+        <h3>Active People {socketConnected ? "🟢" : "🔴"} </h3>
         <ul>
-          {activeUsers.length ? (
-            activeUsers.map((user) => (
+          {socketActiveUsers.length ? (
+            socketActiveUsers.map((user) => (
               <li key={user._id} onClick={() => handleChat(user._id, "user")}>
                 <img src={user.profilePicture || "/default-avatar.png"} alt="dp" width="30" height="30" style={{ borderRadius: "50%" }} />
                 <span>{user.username}</span>
