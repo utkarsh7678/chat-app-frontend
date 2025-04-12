@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SocketProvider } from "./context/socketContext"; // Import SocketProvider
 import Dashboard from "./components/Dashboard";
 import Chat from "./components/chat";
 import Login from "./components/Login";
@@ -8,6 +9,7 @@ import ForgotPassword from "./components/ForgotPassword";
 
 function App() {
   return (
+    <SocketProvider> {/* Wrap the Router with SocketProvider */}
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -18,6 +20,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Add this */}
       </Routes>
     </Router>
+    </SocketProvider>
   );
 }
 

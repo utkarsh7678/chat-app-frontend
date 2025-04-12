@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useSocket } from "../context/socketContext"; // Importing SocketContext
+
 import "./login.css";
 
 const Login = () => {
@@ -9,7 +11,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
+    const socket = useSocket(); // Using SocketContext
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -21,6 +23,7 @@ const Login = () => {
 
             if (response.data.token) {
                 localStorage.setItem("token", response.data.token);
+                socket.emit("user-online", email);
                 navigate("/dashboard");
             } else {
                 alert(response.data.message || "Invalid Email or Password ❌");
