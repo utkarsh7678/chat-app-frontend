@@ -19,7 +19,7 @@ const Login = () => {
             console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
             console.log("Email:", email, "Password:", password);
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
-                email: lowerEmail,
+                email: email.toLowerCase(),
                 password,
             });
             console.log("Login Request Data:", {
