@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSocket } from "../context/socketContext"; // Importing SocketContext
@@ -19,8 +19,9 @@ const Login = () => {
             console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
             console.log("Email:", email, "Password:", password);
             console.log("Login Request URL:", `${import.meta.env.VITE_API_URL}/auth/login`);
-
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
+            console.log("Full response object:", response);
+console.log("Token from response:", response?.data?.token);
+            const response = await axios.post(`https://realtime-chat-api-z27k.onrender.com/auth/login`, {
                 email: email.toLowerCase(),
                 password,
             });
@@ -28,15 +29,27 @@ const Login = () => {
                 email,
                 password
             });
+            console.log(response.data); 
             if (response.data.token) {
                 localStorage.setItem("token", response.data.token);
+                console.log("Stored token:", localStorage.getItem("token"));
                 socket.emit("user-online", email);
                 navigate("/dashboard");
             } else {
                 alert(response.data.message || "Invalid Email or Password ❌");
             }
         } catch (error) {
-            alert(error.response?.data?.error || "❌ Invalid Email or Password");
+            if (error.response) {
+                console.error("Backend error:", error.response.data);
+                alert(error.response.data?.message || "❌ Invalid email or password");
+            } else if (error.request) {
+                console.error("No response received:", error.request);
+                alert("❌ No response from server");
+            } else {
+                console.error("Error setting up request:", error.message);
+                alert("❌ Error during request setup");
+            }
+
         }
         setLoading(false);
     };
