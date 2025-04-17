@@ -19,8 +19,6 @@ const Login = () => {
             console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
             console.log("Email:", email, "Password:", password);
             console.log("Login Request URL:", `${import.meta.env.VITE_API_URL}/auth/login`);
-            console.log("Full response object:", response);
-console.log("Token from response:", response?.data?.token);
             const response = await axios.post(`https://realtime-chat-api-z27k.onrender.com/auth/login`, {
                 email: email.toLowerCase(),
                 password,
@@ -29,7 +27,10 @@ console.log("Token from response:", response?.data?.token);
                 email,
                 password
             });
-            console.log(response.data); 
+            
+        console.log("Login Request Data:", { email, password });
+        console.log("Full response object:", response);
+        console.log("Token from response:", response?.data?.token);
             if (response.data.token) {
                 localStorage.setItem("token", response.data.token);
                 console.log("Stored token:", localStorage.getItem("token"));
