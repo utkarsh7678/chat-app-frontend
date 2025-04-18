@@ -11,7 +11,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const socket = useSocket(); // Using SocketContext
+    const {socket} = useSocket(); // Using SocketContext
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -34,6 +34,8 @@ const Login = () => {
             if (response.data.token) {
                 localStorage.setItem("token", response.data.token);
                 console.log("Stored token:", localStorage.getItem("token"));
+                console.log("Socket from useSocket:", socket);
+
                 socket.emit("user-online", email);
                 navigate("/dashboard");
             } else {

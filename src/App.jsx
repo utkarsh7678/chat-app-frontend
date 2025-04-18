@@ -9,8 +9,9 @@ import ForgotPassword from "./components/ForgotPassword";
 
 function App() {
   return (
-    <SocketProvider> {/* Wrap the Router with SocketProvider */}
     <Router>
+    <SocketProvider> {/* Wrap the Router with SocketProvider */}
+   
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -19,8 +20,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Add this */}
       </Routes>
-    </Router>
     </SocketProvider>
+    </Router>
   );
 }
 
