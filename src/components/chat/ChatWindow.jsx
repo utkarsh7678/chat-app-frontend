@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useParams } from 'react-router-dom';
 import useStore from '../../store/useStore';
-import { useSocket } from '../../context/SocketContext';
+import { useSocket } from '../../context/socketContext';
 import { getThemeColors } from '../../utils/theme';
 import {
   formatMessageTime,
