@@ -1,5 +1,3 @@
-import useStore from '../store/useStore';
-
 // Socket operations
 const socketOperations = {
   updateLastSeen: (socket) => {
@@ -57,16 +55,12 @@ export const formatLastSeen = (timestamp) => {
 };
 
 // Check if user is online
-export const isUserOnline = (userId) => {
-  const store = useStore.getState();
-  return store.onlineUsers.includes(userId);
+export const isUserOnline = (userId, onlineUsers) => {
+  return onlineUsers.includes(userId);
 };
 
 // Handle user activity
-export const handleUserActivity = () => {
-  const store = useStore.getState();
-  const socket = store.socket;
-  
+export const handleUserActivity = (socket) => {
   if (socket) {
     socketOperations.updateLastSeen(socket);
     socketOperations.setUserOnline(socket);
@@ -74,7 +68,7 @@ export const handleUserActivity = () => {
 };
 
 // Setup activity listeners
-export const setupActivityListeners = () => {
+export const setupActivityListeners = (socket) => {
   // Update last seen on user activity
   const activityEvents = [
     'mousedown',
@@ -84,59 +78,55 @@ export const setupActivityListeners = () => {
     'scroll'
   ];
 
+  const handleActivity = () => handleUserActivity(socket);
+
   activityEvents.forEach(event => {
-    window.addEventListener(event, handleUserActivity, { passive: true });
+    window.addEventListener(event, handleActivity, { passive: true });
   });
 
   // Set user as offline when window is closed
   window.addEventListener('beforeunload', () => {
-    const store = useStore.getState();
-    socketOperations.setUserOffline(store.socket);
+    socketOperations.setUserOffline(socket);
   });
 
   // Set user as online when window is focused
   window.addEventListener('focus', () => {
-    const store = useStore.getState();
-    socketOperations.setUserOnline(store.socket);
+    socketOperations.setUserOnline(socket);
   });
 
   // Set user as offline when window is blurred
   window.addEventListener('blur', () => {
-    const store = useStore.getState();
-    socketOperations.setUserOffline(store.socket);
+    socketOperations.setUserOffline(socket);
   });
 
   // Cleanup function
   return () => {
     activityEvents.forEach(event => {
-      window.removeEventListener(event, handleUserActivity);
+      window.removeEventListener(event, handleActivity);
     });
     window.removeEventListener('beforeunload', () => {
-      const store = useStore.getState();
-      socketOperations.setUserOffline(store.socket);
+      socketOperations.setUserOffline(socket);
     });
     window.removeEventListener('focus', () => {
-      const store = useStore.getState();
-      socketOperations.setUserOnline(store.socket);
+      socketOperations.setUserOnline(socket);
     });
     window.removeEventListener('blur', () => {
-      const store = useStore.getState();
-      socketOperations.setUserOffline(store.socket);
+      socketOperations.setUserOffline(socket);
     });
   };
 };
 
 // Get user status
-export const getUserStatus = (user) => {
-  if (isUserOnline(user._id)) {
+export const getUserStatus = (user, onlineUsers) => {
+  if (isUserOnline(user._id, onlineUsers)) {
     return 'Online';
   }
   return formatLastSeen(user.lastSeen);
 };
 
 // Get user status color
-export const getUserStatusColor = (user) => {
-  if (isUserOnline(user._id)) {
+export const getUserStatusColor = (user, onlineUsers) => {
+  if (isUserOnline(user._id, onlineUsers)) {
     return 'success';
   }
   return 'text.secondary';
