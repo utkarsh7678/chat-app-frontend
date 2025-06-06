@@ -1,33 +1,24 @@
 import useStore from '../store/useStore';
 
-// Custom hook for socket operations
-export const usePresenceSocket = () => {
-  const store = useStore.getState();
-  const socket = store.socket;
-
-  const updateLastSeen = () => {
+// Socket operations
+const socketOperations = {
+  updateLastSeen: (socket) => {
     if (socket) {
       socket.emit('updateLastSeen');
     }
-  };
+  },
 
-  const setUserOnline = () => {
+  setUserOnline: (socket) => {
     if (socket) {
       socket.emit('setOnline');
     }
-  };
+  },
 
-  const setUserOffline = () => {
+  setUserOffline: (socket) => {
     if (socket) {
       socket.emit('setOffline');
     }
-  };
-
-  return {
-    updateLastSeen,
-    setUserOnline,
-    setUserOffline
-  };
+  }
 };
 
 // Format last seen timestamp
@@ -77,8 +68,8 @@ export const handleUserActivity = () => {
   const socket = store.socket;
   
   if (socket) {
-    socket.emit('updateLastSeen');
-    socket.emit('setOnline');
+    socketOperations.updateLastSeen(socket);
+    socketOperations.setUserOnline(socket);
   }
 };
 
@@ -100,28 +91,19 @@ export const setupActivityListeners = () => {
   // Set user as offline when window is closed
   window.addEventListener('beforeunload', () => {
     const store = useStore.getState();
-    const socket = store.socket;
-    if (socket) {
-      socket.emit('setOffline');
-    }
+    socketOperations.setUserOffline(store.socket);
   });
 
   // Set user as online when window is focused
   window.addEventListener('focus', () => {
     const store = useStore.getState();
-    const socket = store.socket;
-    if (socket) {
-      socket.emit('setOnline');
-    }
+    socketOperations.setUserOnline(store.socket);
   });
 
   // Set user as offline when window is blurred
   window.addEventListener('blur', () => {
     const store = useStore.getState();
-    const socket = store.socket;
-    if (socket) {
-      socket.emit('setOffline');
-    }
+    socketOperations.setUserOffline(store.socket);
   });
 
   // Cleanup function
@@ -131,24 +113,15 @@ export const setupActivityListeners = () => {
     });
     window.removeEventListener('beforeunload', () => {
       const store = useStore.getState();
-      const socket = store.socket;
-      if (socket) {
-        socket.emit('setOffline');
-      }
+      socketOperations.setUserOffline(store.socket);
     });
     window.removeEventListener('focus', () => {
       const store = useStore.getState();
-      const socket = store.socket;
-      if (socket) {
-        socket.emit('setOnline');
-      }
+      socketOperations.setUserOnline(store.socket);
     });
     window.removeEventListener('blur', () => {
       const store = useStore.getState();
-      const socket = store.socket;
-      if (socket) {
-        socket.emit('setOffline');
-      }
+      socketOperations.setUserOffline(store.socket);
     });
   };
 };
