@@ -1,4 +1,3 @@
-import useStore from '../store/useStore';
 import { createTheme } from '@mui/material/styles';
 
 // Theme colors
@@ -35,18 +34,6 @@ export const themeColors = {
     info: '#2196f3',
     success: '#4caf50'
   }
-};
-
-// Get current theme
-export const getCurrentTheme = () => {
-  const store = useStore.getState();
-  return store.theme;
-};
-
-// Toggle theme
-export const toggleTheme = () => {
-  const store = useStore.getState();
-  store.toggleTheme();
 };
 
 // Get theme colors
@@ -92,71 +79,70 @@ export const getThemeColors = (mode = 'light') => {
 };
 
 // Get color by type
-export const getColorByType = (type) => {
-  const colors = getThemeColors();
+export const getColorByType = (type, mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors[type] || colors.primary;
 };
 
 // Get text color by type
-export const getTextColorByType = (type) => {
-  const colors = getThemeColors();
+export const getTextColorByType = (type, mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.text[type] || colors.text.primary;
 };
 
 // Get background color by type
-export const getBackgroundColorByType = (type) => {
-  const colors = getThemeColors();
+export const getBackgroundColorByType = (type, mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors[type] || colors.background;
 };
 
 // Get surface color by type
-export const getSurfaceColorByType = (type) => {
-  const colors = getThemeColors();
+export const getSurfaceColorByType = (type, mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors[type] || colors.surface;
 };
 
 // Get divider color
-export const getDividerColor = () => {
-  const colors = getThemeColors();
+export const getDividerColor = (mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.divider;
 };
 
 // Get error color
-export const getErrorColor = () => {
-  const colors = getThemeColors();
+export const getErrorColor = (mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.error;
 };
 
 // Get warning color
-export const getWarningColor = () => {
-  const colors = getThemeColors();
+export const getWarningColor = (mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.warning;
 };
 
 // Get info color
-export const getInfoColor = () => {
-  const colors = getThemeColors();
+export const getInfoColor = (mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.info;
 };
 
 // Get success color
-export const getSuccessColor = () => {
-  const colors = getThemeColors();
+export const getSuccessColor = (mode = 'light') => {
+  const colors = getThemeColors(mode);
   return colors.success;
 };
 
 // Get contrast text color
-export const getContrastTextColor = (backgroundColor) => {
-  const colors = getThemeColors();
+export const getContrastTextColor = (backgroundColor, mode = 'light') => {
+  const colors = getThemeColors(mode);
   const isDark = backgroundColor === colors.dark.background || 
                  backgroundColor === colors.dark.surface;
   return isDark ? colors.dark.text.primary : colors.light.text.primary;
 };
 
 // Get elevation shadow
-export const getElevationShadow = (elevation) => {
-  const theme = getCurrentTheme();
-  const isDark = theme === 'dark';
+export const getElevationShadow = (elevation, mode = 'light') => {
+  const isDark = mode === 'dark';
   
   const shadows = {
     0: 'none',
@@ -267,6 +253,6 @@ export const getColorWithOpacity = (color, opacity) => {
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
 
-  // Return rgba color
+  // Return RGBA color
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }; 
