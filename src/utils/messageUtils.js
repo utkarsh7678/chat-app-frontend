@@ -1,5 +1,44 @@
 import { format, isToday, isYesterday, isThisYear } from 'date-fns';
-import { getFileIcon } from './fileHandler';
+
+// Get file icon based on type
+const getFileIcon = (type) => {
+  if (!type) return 'insert_drive_file';
+
+  if (type.startsWith('image/')) {
+    return 'image';
+  } else if (type.startsWith('video/')) {
+    return 'videocam';
+  } else if (type.startsWith('audio/')) {
+    return 'audiotrack';
+  } else if (type === 'application/pdf') {
+    return 'picture_as_pdf';
+  } else if (type.includes('word') || type.includes('document')) {
+    return 'description';
+  } else if (type.includes('excel') || type.includes('spreadsheet')) {
+    return 'table_chart';
+  } else if (type.includes('powerpoint') || type.includes('presentation')) {
+    return 'slideshow';
+  } else if (type === 'text/plain') {
+    return 'article';
+  } else if (type === 'text/csv') {
+    return 'table_view';
+  } else if (type.includes('zip') || type.includes('compressed')) {
+    return 'folder_zip';
+  }
+
+  return 'insert_drive_file';
+};
+
+// Format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 // Format message timestamp
 export const formatMessageTime = (message) => {
