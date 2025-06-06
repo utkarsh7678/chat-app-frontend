@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../../store/useStore';
-import { getThemeColors, toggleTheme } from '../../utils/theme';
+import { getThemeColors } from '../../utils/theme';
 import { setupActivityListeners } from '../../utils/presence';
 import { useEffect } from 'react';
 
@@ -32,7 +32,7 @@ const Header = () => {
   const colors = getThemeColors();
   const navigate = useNavigate();
   
-  const { user, notifications, toggleSidebar, logout } = useStore();
+  const { user, notifications, toggleSidebar, logout, toggleTheme } = useStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
 
