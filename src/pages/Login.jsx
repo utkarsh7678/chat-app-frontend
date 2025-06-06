@@ -8,6 +8,7 @@ import {
   Button,
   Link,
   Paper,
+  CircularProgress,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
@@ -29,6 +30,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { setUser, setToken } = useStore();
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -38,12 +40,19 @@ const Login = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
+        setLoading(true);
+        setError('');
         const response = await auth.login(values);
         setUser(response.data.user);
         setToken(response.data.token);
         navigate('/chat');
       } catch (err) {
-        setError(err.response?.data?.message || 'An error occurred');
+        setLoading(false);
+        if (err.response?.status === 400) {
+          setError('Invalid email or password');
+        } else {
+          setError(err.response?.data?.error || 'An error occurred. Please try again.');
+        }
       }
     },
   });
@@ -89,6 +98,7 @@ const Login = () => {
               onChange={formik.handleChange}
               error={formik.touched.email && Boolean(formik.errors.email)}
               helperText={formik.touched.email && formik.errors.email}
+              disabled={loading}
             />
             <TextField
               margin="normal"
@@ -103,6 +113,7 @@ const Login = () => {
               onChange={formik.handleChange}
               error={formik.touched.password && Boolean(formik.errors.password)}
               helperText={formik.touched.password && formik.errors.password}
+              disabled={loading}
             />
             {error && (
               <Typography color="error" sx={{ mt: 2 }}>
@@ -114,8 +125,9 @@ const Login = () => {
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={loading}
             >
-              Sign In
+              {loading ? <CircularProgress size={24} /> : 'Sign In'}
             </Button>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Link component={RouterLink} to="/forgot-password" variant="body2">
