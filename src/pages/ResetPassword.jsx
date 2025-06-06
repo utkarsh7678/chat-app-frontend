@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import { resetPassword } from '../services/api';
+import { auth } from '../services/api';
 
 const validationSchema = yup.object({
   password: yup
@@ -38,7 +38,7 @@ const ResetPassword = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        await resetPassword({ token, password: values.password });
+        await auth.resetPassword(token, values.password);
         navigate('/login', {
           state: { message: 'Password has been reset successfully' },
         });

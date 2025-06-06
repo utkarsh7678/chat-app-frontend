@@ -9,7 +9,7 @@ import {
   Paper,
   CircularProgress,
 } from '@mui/material';
-import { verifyEmail } from '../services/api';
+import { auth } from '../services/api';
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const VerifyEmail = () => {
       }
 
       try {
-        await verifyEmail(token);
+        await auth.verifyEmail(token);
         setLoading(false);
       } catch (err) {
         setError(err.response?.data?.message || 'An error occurred');
