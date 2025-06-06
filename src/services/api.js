@@ -43,10 +43,10 @@ export const auth = {
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
   verifyEmail: (token) => api.post('/auth/verify-email', { token }),
-  sendRegistrationOtp: (email) => api.post('/auth/send-registration-otp', { email }),
-  verifyRegistrationOtp: (data) => api.post('/auth/verify-registration-otp', data),
-  sendResetPasswordOtp: (email) => api.post('/auth/send-reset-password-otp', { email }),
-  verifyResetPasswordOtp: (data) => api.post('/auth/verify-reset-password-otp', data),
+  sendRegistrationOtp: (email) => api.post('/auth/send-otp', { email }),
+  verifyRegistrationOtp: (data) => api.post('/auth/register', data),
+  sendResetPasswordOtp: (email) => api.post('/auth/send-reset-otp', { email }),
+  verifyResetPasswordOtp: (data) => api.post('/auth/reset-password', data),
 };
 
 export const users = {

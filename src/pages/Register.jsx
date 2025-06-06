@@ -62,16 +62,16 @@ const Register = () => {
         setLoading(true);
         setError('');
         // First, check if email exists and send OTP
-        const response = await auth.sendRegistrationOtp(values.email);
+        await auth.sendRegistrationOtp(values.email);
         setRegistrationData(values);
         setShowOtpInput(true);
         setLoading(false);
       } catch (err) {
         setLoading(false);
-        if (err.response?.status === 400 && err.response?.data?.message?.includes('already exists')) {
+        if (err.response?.status === 400 && err.response?.data?.error?.includes('already used')) {
           setError('This email is already registered. Please use a different email or try logging in.');
         } else {
-          setError(err.response?.data?.message || 'An error occurred');
+          setError(err.response?.data?.error || 'An error occurred');
         }
       }
     },
@@ -95,7 +95,7 @@ const Register = () => {
         navigate('/chat');
       } catch (err) {
         setLoading(false);
-        setError(err.response?.data?.message || 'Invalid OTP. Please try again.');
+        setError(err.response?.data?.error || 'Invalid OTP. Please try again.');
       }
     },
   });
@@ -257,13 +257,8 @@ const Register = () => {
               autoComplete="new-password"
               value={formik.values.confirmPassword}
               onChange={formik.handleChange}
-              error={
-                formik.touched.confirmPassword &&
-                Boolean(formik.errors.confirmPassword)
-              }
-              helperText={
-                formik.touched.confirmPassword && formik.errors.confirmPassword
-              }
+              error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+              helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
             />
             {error && (
               <Typography color="error" sx={{ mt: 2 }}>
@@ -277,9 +272,9 @@ const Register = () => {
               sx={{ mt: 3, mb: 2 }}
               disabled={loading}
             >
-              {loading ? <CircularProgress size={24} /> : 'Sign Up'}
+              {loading ? <CircularProgress size={24} /> : 'Send OTP'}
             </Button>
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ textAlign: 'center' }}>
               <Link component={RouterLink} to="/login" variant="body2">
                 Already have an account? Sign in
               </Link>
