@@ -1,5 +1,4 @@
 import { encryptFile, decryptFile } from './encryption';
-import { getFileIcon } from '@mui/icons-material';
 
 // Convert file to base64
 export const fileToBase64 = (file) => {
