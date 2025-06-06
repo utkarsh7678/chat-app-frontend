@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import { forgotPassword } from '../services/api';
+import { auth } from '../services/api';
 
 const validationSchema = yup.object({
   email: yup
@@ -31,7 +31,7 @@ const ForgotPassword = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        await forgotPassword(values);
+        await auth.forgotPassword(values.email);
         setSuccess(true);
         setError('');
       } catch (err) {
