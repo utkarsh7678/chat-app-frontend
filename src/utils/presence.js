@@ -1,5 +1,5 @@
 import useStore from '../store/useStore';
-import { useSocket } from '../context/SocketContext';
+import { useSocket } from '../context/socketContext';
 
 // Update user's last seen timestamp
 export const updateLastSeen = () => {
