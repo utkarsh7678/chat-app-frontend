@@ -1,5 +1,3 @@
-import useStore from '../store/useStore';
-
 // Request notification permission
 export const requestNotificationPermission = async () => {
   try {
@@ -35,26 +33,22 @@ export const showNotification = (title, options = {}) => {
 };
 
 // Add notification to store
-export const addNotification = (notification) => {
-  const store = useStore.getState();
+export const addNotification = (notification, store) => {
   store.addNotification(notification);
 };
 
 // Mark notification as read
-export const markNotificationAsRead = (notificationId) => {
-  const store = useStore.getState();
+export const markNotificationAsRead = (notificationId, store) => {
   store.markNotificationAsRead(notificationId);
 };
 
 // Clear all notifications
-export const clearNotifications = () => {
-  const store = useStore.getState();
+export const clearNotifications = (store) => {
   store.clearNotifications();
 };
 
 // Handle new message notification
-export const handleNewMessageNotification = (message) => {
-  const store = useStore.getState();
+export const handleNewMessageNotification = (message, store) => {
   const { user } = store;
 
   // Don't show notification if user is in the same chat
@@ -70,7 +64,7 @@ export const handleNewMessageNotification = (message) => {
     message: `New message from ${message.sender.username}`,
     read: false,
     data: message
-  });
+  }, store);
 
   // Show browser notification
   showNotification(`New message from ${message.sender.username}`, {
@@ -81,8 +75,7 @@ export const handleNewMessageNotification = (message) => {
 };
 
 // Handle new group message notification
-export const handleNewGroupMessageNotification = (message) => {
-  const store = useStore.getState();
+export const handleNewGroupMessageNotification = (message, store) => {
   const { user } = store;
 
   // Don't show notification if user is in the same group
@@ -98,7 +91,7 @@ export const handleNewGroupMessageNotification = (message) => {
     message: `New message in ${message.group.name}`,
     read: false,
     data: message
-  });
+  }, store);
 
   // Show browser notification
   showNotification(`New message in ${message.group.name}`, {
@@ -109,7 +102,7 @@ export const handleNewGroupMessageNotification = (message) => {
 };
 
 // Handle friend request notification
-export const handleFriendRequestNotification = (request) => {
+export const handleFriendRequestNotification = (request, store) => {
   // Add notification to store
   addNotification({
     id: Date.now(),
@@ -118,7 +111,7 @@ export const handleFriendRequestNotification = (request) => {
     message: `${request.sender.username} sent you a friend request`,
     read: false,
     data: request
-  });
+  }, store);
 
   // Show browser notification
   showNotification('New Friend Request', {
@@ -129,7 +122,7 @@ export const handleFriendRequestNotification = (request) => {
 };
 
 // Handle group invite notification
-export const handleGroupInviteNotification = (invite) => {
+export const handleGroupInviteNotification = (invite, store) => {
   // Add notification to store
   addNotification({
     id: Date.now(),
@@ -138,7 +131,7 @@ export const handleGroupInviteNotification = (invite) => {
     message: `You've been invited to join ${invite.group.name}`,
     read: false,
     data: invite
-  });
+  }, store);
 
   // Show browser notification
   showNotification('Group Invitation', {
