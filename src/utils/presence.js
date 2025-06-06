@@ -1,34 +1,33 @@
 import useStore from '../store/useStore';
-import { useSocket } from '../context/socketContext';
 
-// Update user's last seen timestamp
-export const updateLastSeen = () => {
+// Custom hook for socket operations
+export const usePresenceSocket = () => {
   const store = useStore.getState();
-  const { socket } = useSocket();
+  const socket = store.socket;
 
-  if (socket) {
-    socket.emit('updateLastSeen');
-  }
-};
+  const updateLastSeen = () => {
+    if (socket) {
+      socket.emit('updateLastSeen');
+    }
+  };
 
-// Set user as online
-export const setUserOnline = () => {
-  const store = useStore.getState();
-  const { socket } = useSocket();
+  const setUserOnline = () => {
+    if (socket) {
+      socket.emit('setOnline');
+    }
+  };
 
-  if (socket) {
-    socket.emit('setOnline');
-  }
-};
+  const setUserOffline = () => {
+    if (socket) {
+      socket.emit('setOffline');
+    }
+  };
 
-// Set user as offline
-export const setUserOffline = () => {
-  const store = useStore.getState();
-  const { socket } = useSocket();
-
-  if (socket) {
-    socket.emit('setOffline');
-  }
+  return {
+    updateLastSeen,
+    setUserOnline,
+    setUserOffline
+  };
 };
 
 // Format last seen timestamp
@@ -74,8 +73,13 @@ export const isUserOnline = (userId) => {
 
 // Handle user activity
 export const handleUserActivity = () => {
-  updateLastSeen();
-  setUserOnline();
+  const store = useStore.getState();
+  const socket = store.socket;
+  
+  if (socket) {
+    socket.emit('updateLastSeen');
+    socket.emit('setOnline');
+  }
 };
 
 // Setup activity listeners
@@ -94,22 +98,58 @@ export const setupActivityListeners = () => {
   });
 
   // Set user as offline when window is closed
-  window.addEventListener('beforeunload', setUserOffline);
+  window.addEventListener('beforeunload', () => {
+    const store = useStore.getState();
+    const socket = store.socket;
+    if (socket) {
+      socket.emit('setOffline');
+    }
+  });
 
   // Set user as online when window is focused
-  window.addEventListener('focus', setUserOnline);
+  window.addEventListener('focus', () => {
+    const store = useStore.getState();
+    const socket = store.socket;
+    if (socket) {
+      socket.emit('setOnline');
+    }
+  });
 
   // Set user as offline when window is blurred
-  window.addEventListener('blur', setUserOffline);
+  window.addEventListener('blur', () => {
+    const store = useStore.getState();
+    const socket = store.socket;
+    if (socket) {
+      socket.emit('setOffline');
+    }
+  });
 
   // Cleanup function
   return () => {
     activityEvents.forEach(event => {
       window.removeEventListener(event, handleUserActivity);
     });
-    window.removeEventListener('beforeunload', setUserOffline);
-    window.removeEventListener('focus', setUserOnline);
-    window.removeEventListener('blur', setUserOffline);
+    window.removeEventListener('beforeunload', () => {
+      const store = useStore.getState();
+      const socket = store.socket;
+      if (socket) {
+        socket.emit('setOffline');
+      }
+    });
+    window.removeEventListener('focus', () => {
+      const store = useStore.getState();
+      const socket = store.socket;
+      if (socket) {
+        socket.emit('setOnline');
+      }
+    });
+    window.removeEventListener('blur', () => {
+      const store = useStore.getState();
+      const socket = store.socket;
+      if (socket) {
+        socket.emit('setOffline');
+      }
+    });
   };
 };
 
