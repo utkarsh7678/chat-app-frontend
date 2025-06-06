@@ -12,7 +12,7 @@ import {
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
-import { login } from '../services/api';
+import { auth } from '../services/api';
 
 const validationSchema = yup.object({
   email: yup
@@ -38,9 +38,9 @@ const Login = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await login(values);
-        setUser(response.user);
-        setToken(response.token);
+        const response = await auth.login(values);
+        setUser(response.data.user);
+        setToken(response.data.token);
         navigate('/chat');
       } catch (err) {
         setError(err.response?.data?.message || 'An error occurred');
