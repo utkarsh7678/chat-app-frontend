@@ -14,7 +14,7 @@ import { PhotoCamera } from '@mui/icons-material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
-import { updateProfile, uploadAvatar } from '../services/api';
+import { users } from '../services/api';
 
 const validationSchema = yup.object({
   username: yup
@@ -43,8 +43,8 @@ const Profile = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await updateProfile(values);
-        setUser(response.user);
+        const response = await users.updateProfile(values);
+        setUser(response.data.user);
         setSuccess('Profile updated successfully');
         setError('');
       } catch (err) {
@@ -61,8 +61,8 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await uploadAvatar(formData);
-      setUser(response.user);
+      const response = await users.updateAvatar(formData);
+      setUser(response.data.user);
       setSuccess('Avatar updated successfully');
       setError('');
     } catch (err) {
