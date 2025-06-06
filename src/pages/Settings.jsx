@@ -14,7 +14,7 @@ import {
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
-import { updateSettings } from '../services/api';
+import { users } from '../services/api';
 
 const validationSchema = yup.object({
   currentPassword: yup
@@ -57,7 +57,12 @@ const Settings = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        await updateSettings(values);
+        if (values.changePassword) {
+          await users.updatePassword({
+            currentPassword: values.currentPassword,
+            newPassword: values.newPassword,
+          });
+        }
         setSuccess('Settings updated successfully');
         setError('');
         formik.resetForm();
