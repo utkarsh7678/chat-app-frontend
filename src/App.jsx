@@ -20,18 +20,22 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, user } = useStore();
+  console.log('PrivateRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, user } = useStore();
+  console.log('PublicRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return !isAuthenticated ? children : <Navigate to="/chat" />;
 };
 
 const App = () => {
-  const { theme } = useStore();
+  const { theme, isAuthenticated, user } = useStore();
   const appTheme = createAppTheme(theme);
+
+  console.log('App render: isAuthenticated:', isAuthenticated, 'user:', user);
 
   return (
     <ThemeProvider theme={appTheme}>

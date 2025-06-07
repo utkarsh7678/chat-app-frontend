@@ -40,13 +40,19 @@ const Login = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
+        console.log('Login attempt with:', values);
         setLoading(true);
         setError('');
         const response = await auth.login(values);
-        setUser(response.data.user);
+        console.log('Login response:', response);
+        setUser({ email: values.email, loggedIn: true });
+        console.log('User set in store:', { email: values.email, loggedIn: true });
         setToken(response.data.token);
+        console.log('Token set in store:', response.data.token);
+        console.log('Navigating to /chat');
         navigate('/chat');
       } catch (err) {
+        console.error('Login error:', err);
         setLoading(false);
         if (err.response?.status === 400) {
           setError('Invalid email or password');

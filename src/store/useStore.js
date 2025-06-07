@@ -22,8 +22,14 @@ const useStore = create(
       notifications: [],
 
       // Actions
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setToken: (token) => set({ token }),
+      setUser: (user) => {
+        console.log('setUser called with:', user);
+        set({ user, isAuthenticated: !!user });
+      },
+      setToken: (token) => {
+        console.log('setToken called with:', token);
+        set({ token });
+      },
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
 
       setActiveChat: (chat) => set({ activeChat: chat }),
