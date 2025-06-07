@@ -19,10 +19,11 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user || !token) return;
 
-    const socket = io(process.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+    const socket = io(import.meta.env.VITE_SOCKET_URL, {
       auth: {
         token
-      }
+      },
+      withCredentials: true,
     });
 
     socketRef.current = socket;
