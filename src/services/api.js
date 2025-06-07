@@ -1,7 +1,7 @@
 import axios from 'axios';
 import useStore from '../store/useStore';
 
-const API_URL = 'https://realtime-chat-api-z27k.onrender.com/api';
+const API_URL = 'https://realtime-chat-api-z27k.onrender.com';
 console.log('API URL:', API_URL);
 
 const api = axios.create({
