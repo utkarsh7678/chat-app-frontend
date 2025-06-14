@@ -6,7 +6,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
   Divider,
   Box,
   useMediaQuery,
