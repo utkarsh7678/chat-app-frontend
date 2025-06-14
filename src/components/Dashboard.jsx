@@ -3,13 +3,15 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from '../context/socketContext';
 import useStore from '../store/useStore';
+import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
 const Dashboard = () => {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { activeUsers: socketActiveUsers, socketConnected, socket } = useSocket();
-  const { friends, groups, setFriends, setGroups } = useStore();
+  const { friends, groups, setFriends, setGroups, onlineUsers } = useStore();
 
   const token = localStorage.getItem("token");
 
@@ -21,6 +23,7 @@ const Dashboard = () => {
 
     const fetchData = async () => {
       try {
+        setLoading(true);
         const headers = { Authorization: `Bearer ${token}` };
 
         const [groupRes, friendsRes] = await Promise.all([
@@ -33,6 +36,8 @@ const Dashboard = () => {
         socket.emit("user-online");
       } catch (err) {
         console.error("❌ Error fetching dashboard data:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -40,6 +45,11 @@ const Dashboard = () => {
   }, [navigate, setFriends, setGroups, socket]);
 
   const handleAddFriend = async () => {
+    if (!email.trim()) {
+      alert("Please enter a valid email");
+      return;
+    }
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/friends/add-friend`,
@@ -48,6 +58,11 @@ const Dashboard = () => {
       );
       alert(res.data.message);
       setEmail("");
+      // Refresh friends list
+      const friendsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/friends`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setFriends(friendsRes.data);
     } catch (err) {
       alert(err.response?.data?.error || "Error adding friend");
     }
@@ -61,67 +76,169 @@ const Dashboard = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleAddFriend();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <div className="loading-spinner">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
-      <h2>Welcome to ChatApp Dashboard</h2>
-
-      <div className="section">
-        <h3>Active People {socketConnected ? "🟢" : "🔴"} </h3>
-        <ul>
-          {socketActiveUsers.length ? (
-            socketActiveUsers.map((user) => (
-              <li key={user._id} onClick={() => handleChat(user._id, "user")}>
-                <img src={user.profilePicture || "/default-avatar.png"} alt="dp" width="30" height="30" style={{ borderRadius: "50%" }} />
-                <span>{user.username}</span>
-                <span className="blue-dot">🔵</span>
-              </li>
-            ))
-          ) : (
-            <p>No active users</p>
-          )}
-        </ul>
+      <div className="dashboard-header">
+        <h2>Welcome to ChatApp Dashboard</h2>
+        <div className="connection-status">
+          Connection: {socketConnected ? "🟢 Connected" : "🔴 Disconnected"}
+        </div>
       </div>
 
-      <div className="section">
-        <h3>Groups</h3>
-        <ul>
-          {groups.length ? (
-            groups.map((group) => (
-              <li key={group._id} onClick={() => handleChat(group._id, "group")}>
-                📢 {group.name}
-              </li>
-            ))
-          ) : (
-            <p>No groups available</p>
-          )}
-        </ul>
-      </div>
+      <div className="dashboard-grid">
+        {/* Active Users Section */}
+        <div className="dashboard-section active-users-section">
+          <div className="section-header">
+            <h3>🟢 Active Users</h3>
+            <span className="user-count">{friends.filter(friend => isUserOnline(friend._id, Array.from(onlineUsers))).length} online</span>
+          </div>
+          <div className="users-list">
+            {friends.filter(friend => isUserOnline(friend._id, Array.from(onlineUsers))).length > 0 ? (
+              friends
+                .filter(friend => isUserOnline(friend._id, Array.from(onlineUsers)))
+                .map((user) => (
+                  <div 
+                    key={user._id} 
+                    className="user-item active-user"
+                    onClick={() => handleChat(user._id, "user")}
+                  >
+                    <div className="user-avatar">
+                      <img 
+                        src={user.profilePicture || "/default-avatar.png"} 
+                        alt={user.username} 
+                        className="avatar-img"
+                      />
+                      <div className="online-indicator"></div>
+                    </div>
+                    <div className="user-info">
+                      <span className="username">{user.username}</span>
+                      <span className="status">🟢 Online</span>
+                    </div>
+                  </div>
+                ))
+            ) : (
+              <div className="empty-state">
+                <p>No active users</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <div className="section">
-        <h3>My Friends</h3>
-        <ul>
-          {friends.length ? (
-            friends.map((friend) => (
-              <li key={friend._id}>
-                <img src={friend.profilePicture || "/default-avatar.png"} alt="dp" width="30" height="30" style={{ borderRadius: "50%" }} />
-                <span>{friend.username}</span>
-                <span>{friend.isActive ? "🔵" : "⚪"}</span>
-              </li>
-            ))
-          ) : (
-            <p>No friends yet</p>
-          )}
-        </ul>
-      </div>
+        {/* Friends Section */}
+        <div className="dashboard-section friends-section">
+          <div className="section-header">
+            <h3>👥 My Friends</h3>
+            <span className="user-count">{friends.length} total</span>
+          </div>
+          <div className="users-list">
+            {friends.length > 0 ? (
+              friends.map((friend) => (
+                <div 
+                  key={friend._id} 
+                  className={`user-item ${isUserOnline(friend._id, Array.from(onlineUsers)) ? 'active-user' : 'inactive-user'}`}
+                  onClick={() => handleChat(friend._id, "user")}
+                >
+                  <div className="user-avatar">
+                    <img 
+                      src={friend.profilePicture || "/default-avatar.png"} 
+                      alt={friend.username} 
+                      className="avatar-img"
+                    />
+                    <div className={`status-indicator ${isUserOnline(friend._id, Array.from(onlineUsers)) ? 'online' : 'offline'}`}></div>
+                  </div>
+                  <div className="user-info">
+                    <span className="username">{friend.username}</span>
+                    <span className="status">
+                      {isUserOnline(friend._id, Array.from(onlineUsers)) ? "🟢 Online" : "⚪ Offline"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>No friends yet</p>
+                <p className="empty-hint">Add friends to start chatting!</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <div className="section add-friend-container">
-        <input
-          type="email"
-          placeholder="Enter friend's email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button onClick={handleAddFriend}>Add Friend</button>
+        {/* Groups Section */}
+        <div className="dashboard-section groups-section">
+          <div className="section-header">
+            <h3>📢 Groups</h3>
+            <span className="user-count">{groups.length} groups</span>
+          </div>
+          <div className="groups-list">
+            {groups.length > 0 ? (
+              groups.map((group) => (
+                <div 
+                  key={group._id} 
+                  className="group-item"
+                  onClick={() => handleChat(group._id, "group")}
+                >
+                  <div className="group-avatar">
+                    <img 
+                      src={group.avatar || "/default-group-avatar.png"} 
+                      alt={group.name} 
+                      className="avatar-img"
+                    />
+                  </div>
+                  <div className="group-info">
+                    <span className="group-name">{group.name}</span>
+                    <span className="member-count">{group.members?.length || 0} members</span>
+                  </div>
+                  <div className="group-action">
+                    <span className="chat-icon">💬</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>No groups available</p>
+                <p className="empty-hint">Join or create groups to start group chats!</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Add Friend Section */}
+        <div className="dashboard-section add-friend-section">
+          <div className="section-header">
+            <h3>➕ Add Friend</h3>
+          </div>
+          <div className="add-friend-form">
+            <input
+              type="email"
+              placeholder="Enter friend's email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="friend-email-input"
+            />
+            <button 
+              onClick={handleAddFriend}
+              className="add-friend-btn"
+              disabled={!email.trim()}
+            >
+              Add Friend
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
