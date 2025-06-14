@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
+import { useEffect } from 'react';
 import { SocketProvider } from './context/socketContext';
 import { createAppTheme } from './utils/theme';
 import useStore from './store/useStore';
@@ -23,20 +24,44 @@ import NotFound from './pages/NotFound';
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, user } = useStore();
   console.log('PrivateRoute: isAuthenticated:', isAuthenticated, 'user:', user);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated && user ? children : <Navigate to="/login" />;
 };
 
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useStore();
   console.log('PublicRoute: isAuthenticated:', isAuthenticated, 'user:', user);
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+  return !isAuthenticated || !user ? children : <Navigate to="/dashboard" />;
 };
 
 const App = () => {
-  const { theme, isAuthenticated, user } = useStore();
+  const { theme, isAuthenticated, user, setUser, logout } = useStore();
   const appTheme = createAppTheme(theme);
 
   console.log('App render: isAuthenticated:', isAuthenticated, 'user:', user);
+
+  // Check authentication on app load
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    if (token && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser && (parsedUser._id || parsedUser.email)) {
+          setUser(parsedUser);
+        } else {
+          // Invalid user data, clear everything
+          logout();
+        }
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        logout();
+      }
+    } else if (!token && isAuthenticated) {
+      // No token but authenticated, clear state
+      logout();
+    }
+  }, []);
 
   return (
     <ThemeProvider theme={appTheme}>

@@ -45,8 +45,21 @@ const Login = () => {
         setError('');
         const response = await auth.login(values);
         console.log('Login response:', response);
-        setUser({ email: values.email, loggedIn: true });
-        console.log('User set in store:', { email: values.email, loggedIn: true });
+        
+        // Use the actual user data from the response
+        if (response.data.user) {
+          setUser(response.data.user);
+        } else {
+          // Fallback if user data is not in response
+          setUser({ 
+            email: values.email, 
+            _id: response.data.userId || 'temp-id',
+            username: values.email.split('@')[0],
+            isAuthenticated: true 
+          });
+        }
+        
+        console.log('User set in store:', response.data.user);
         setToken(response.data.token);
         console.log('Token set in store:', response.data.token);
         console.log('Navigating to /dashboard');

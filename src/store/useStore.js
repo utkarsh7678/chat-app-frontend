@@ -29,13 +29,28 @@ const useStore = create(
       // Actions
       setUser: (user) => {
         console.log('setUser called with:', user);
-        set({ user, isAuthenticated: !!user });
+        // Ensure user has required fields
+        const validUser = user && typeof user === 'object' && (user._id || user.email);
+        set({ user: validUser ? user : null, isAuthenticated: !!validUser });
       },
       setToken: (token) => {
         console.log('setToken called with:', token);
         set({ token });
       },
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => {
+        console.log('Logout called');
+        set({ 
+          user: null, 
+          token: null, 
+          isAuthenticated: false,
+          friends: [],
+          groups: [],
+          friendRequests: [],
+          messages: [],
+          onlineUsers: new Set(),
+          typingUsers: new Set()
+        });
+      },
 
       setActiveChat: (chat) => set({ activeChat: chat }),
       setActiveGroup: (group) => set({ activeGroup: group }),
