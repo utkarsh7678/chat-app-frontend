@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListItemButton,
@@ -18,7 +19,8 @@ import {
   Group as GroupIcon,
   People as PeopleIcon,
   Add as AddIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Dashboard as DashboardIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../../store/useStore';
@@ -34,7 +36,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { sidebarOpen, toggleSidebar, friends, groups, friendRequests } = useStore();
+  const { sidebarOpen, toggleSidebar, friends, groups, friendRequests, onlineUsers } = useStore();
   const [searchOpen, setSearchOpen] = useState(false);
 
   const handleDrawerToggle = () => {
@@ -57,6 +59,19 @@ const Sidebar = () => {
 
   const drawer = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Dashboard */}
+      <ListItemButton 
+        onClick={() => handleNavigation('/dashboard')}
+        selected={location.pathname === '/dashboard'}
+      >
+        <ListItemIcon>
+          <DashboardIcon />
+        </ListItemIcon>
+        <ListItemText primary="Dashboard" />
+      </ListItemButton>
+
+      <Divider />
+
       {/* Search */}
       <ListItemButton onClick={handleSearchClick}>
         <ListItemIcon>
@@ -92,7 +107,7 @@ const Sidebar = () => {
                   overlap="circular"
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   variant="dot"
-                  color={isUserOnline(friend._id) ? 'success' : 'default'}
+                  color={isUserOnline(friend._id, Array.from(onlineUsers)) ? 'success' : 'default'}
                 >
                   <Box
                     component="img"
@@ -129,8 +144,8 @@ const Sidebar = () => {
         {groups.map((group) => (
           <ListItem key={group._id} disablePadding>
             <ListItemButton
-              selected={location.pathname === `/group/${group._id}`}
-              onClick={() => handleNavigation(`/group/${group._id}`)}
+              selected={location.pathname === `/chat/group/${group._id}`}
+              onClick={() => handleNavigation(`/chat/group/${group._id}`)}
             >
               <ListItemIcon>
                 <Box

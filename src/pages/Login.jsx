@@ -49,8 +49,8 @@ const Login = () => {
         console.log('User set in store:', { email: values.email, loggedIn: true });
         setToken(response.data.token);
         console.log('Token set in store:', response.data.token);
-        console.log('Navigating to /chat');
-        navigate('/chat');
+        console.log('Navigating to /dashboard');
+        navigate('/dashboard');
       } catch (err) {
         console.error('Login error:', err);
         setLoading(false);

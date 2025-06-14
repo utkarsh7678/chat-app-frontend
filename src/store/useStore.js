@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 const useStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Auth state
       user: null,
       token: null,
@@ -15,6 +15,11 @@ const useStore = create(
       messages: [],
       onlineUsers: new Set(),
       typingUsers: new Set(),
+
+      // User data
+      friends: [],
+      groups: [],
+      friendRequests: [],
 
       // UI state
       theme: 'light',
@@ -39,6 +44,36 @@ const useStore = create(
       })),
       setMessages: (messages) => set({ messages }),
       clearMessages: () => set({ messages: [] }),
+
+      // Friends and groups management
+      setFriends: (friends) => set({ friends }),
+      addFriend: (friend) => set((state) => ({
+        friends: [...state.friends, friend]
+      })),
+      removeFriend: (friendId) => set((state) => ({
+        friends: state.friends.filter(f => f._id !== friendId)
+      })),
+
+      setGroups: (groups) => set({ groups }),
+      addGroup: (group) => set((state) => ({
+        groups: [...state.groups, group]
+      })),
+      removeGroup: (groupId) => set((state) => ({
+        groups: state.groups.filter(g => g._id !== groupId)
+      })),
+
+      setFriendRequests: (requests) => set({ friendRequests: requests }),
+      addFriendRequest: (request) => set((state) => ({
+        friendRequests: [...state.friendRequests, request]
+      })),
+      updateFriendRequest: (requestId, updates) => set((state) => ({
+        friendRequests: state.friendRequests.map(r => 
+          r._id === requestId ? { ...r, ...updates } : r
+        )
+      })),
+      removeFriendRequest: (requestId) => set((state) => ({
+        friendRequests: state.friendRequests.filter(r => r._id !== requestId)
+      })),
 
       addOnlineUser: (userId) => set((state) => ({
         onlineUsers: new Set([...state.onlineUsers, userId])

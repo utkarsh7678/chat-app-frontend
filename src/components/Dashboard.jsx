@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useSocket } from '../context/socketContext'; // Import useSocket
+import { useSocket } from '../context/socketContext';
+import useStore from '../store/useStore';
 import "./dashboard.css";
 
 const Dashboard = () => {
-
-  const [groups, setGroups] = useState([]);
-  const [friends, setFriends] = useState([]);
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
   const { activeUsers: socketActiveUsers, socketConnected, socket } = useSocket();
+  const { friends, groups, setFriends, setGroups } = useStore();
 
   const token = localStorage.getItem("token");
 
@@ -24,13 +23,11 @@ const Dashboard = () => {
       try {
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [activeUserRes, groupRes, friendsRes] = await Promise.all([
-         
+        const [groupRes, friendsRes] = await Promise.all([
           axios.get(`${import.meta.env.VITE_API_URL}/api/groups`, { headers }),
           axios.get(`${import.meta.env.VITE_API_URL}/api/friends`, { headers }),
         ]);
 
-       
         setGroups(groupRes.data);
         setFriends(friendsRes.data);
         socket.emit("user-online");
@@ -40,7 +37,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, [navigate]);
+  }, [navigate, setFriends, setGroups, socket]);
 
   const handleAddFriend = async () => {
     try {
@@ -57,7 +54,11 @@ const Dashboard = () => {
   };
 
   const handleChat = (id, type) => {
-    navigate(`/chat/${type}/${id}`);
+    if (type === "user") {
+      navigate(`/chat/${id}`);
+    } else if (type === "group") {
+      navigate(`/chat/group/${id}`);
+    }
   };
 
   return (

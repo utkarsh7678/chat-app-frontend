@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -28,7 +29,7 @@ const PrivateRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useStore();
   console.log('PublicRoute: isAuthenticated:', isAuthenticated, 'user:', user);
-  return !isAuthenticated ? children : <Navigate to="/chat" />;
+  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
 };
 
 const App = () => {
@@ -94,9 +95,11 @@ const App = () => {
                 </PrivateRoute>
               }
             >
-              <Route index element={<Navigate to="/chat" replace />} />
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route path="chat" element={<Chat />} />
               <Route path="chat/:userId" element={<Chat />} />
+              <Route path="chat/group/:groupId" element={<Chat />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
             </Route>
