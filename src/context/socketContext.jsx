@@ -21,8 +21,8 @@ export const SocketProvider = ({ children }) => {
   const removeOnlineUser = useStore((state) => state.removeOnlineUser);
 
   useEffect(() => {
+    // Clean up existing socket if user/token is removed
     if (!user || !token) {
-      // Clean up existing socket if user/token is removed
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -33,70 +33,74 @@ export const SocketProvider = ({ children }) => {
     // Don't create a new socket if one already exists
     if (socketRef.current) return;
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL, {
-      auth: {
-        token
-      },
-      withCredentials: true,
-    });
+    try {
+      const socket = io(import.meta.env.VITE_SOCKET_URL, {
+        auth: {
+          token
+        },
+        withCredentials: true,
+      });
 
-    socketRef.current = socket;
+      socketRef.current = socket;
 
-    // Connection events
-    socket.on('connect', () => {
-      console.log('Socket connected');
-    });
+      // Connection events
+      socket.on('connect', () => {
+        console.log('Socket connected');
+      });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
-    });
+      socket.on('disconnect', () => {
+        console.log('Socket disconnected');
+      });
 
-    socket.on('error', (error) => {
-      console.error('Socket error:', error);
-    });
+      socket.on('error', (error) => {
+        console.error('Socket error:', error);
+      });
 
-    // Message events
-    socket.on('message', (message) => {
-      addMessage(message);
-    });
+      // Message events
+      socket.on('message', (message) => {
+        addMessage(message);
+      });
 
-    socket.on('messageDeleted', (messageId) => {
-      // Update message in store
-    });
+      socket.on('messageDeleted', (messageId) => {
+        // Update message in store
+      });
 
-    socket.on('messageEdited', (message) => {
-      // Update message in store
-    });
+      socket.on('messageEdited', (message) => {
+        // Update message in store
+      });
 
-    // User events
-    socket.on('userOnline', (userId) => {
-      addOnlineUser(userId);
-    });
+      // User events
+      socket.on('userOnline', (userId) => {
+        addOnlineUser(userId);
+      });
 
-    socket.on('userOffline', (userId) => {
-      removeOnlineUser(userId);
-    });
+      socket.on('userOffline', (userId) => {
+        removeOnlineUser(userId);
+      });
 
-    socket.on('typing', ({ userId, isTyping }) => {
-      // Update typing status in store
-    });
+      socket.on('typing', ({ userId, isTyping }) => {
+        // Update typing status in store
+      });
 
-    // Group events
-    socket.on('groupMessage', (message) => {
-      addMessage(message);
-    });
+      // Group events
+      socket.on('groupMessage', (message) => {
+        addMessage(message);
+      });
 
-    socket.on('groupUserJoined', ({ groupId, user }) => {
-      // Update group members in store
-    });
+      socket.on('groupUserJoined', ({ groupId, user }) => {
+        // Update group members in store
+      });
 
-    socket.on('groupUserLeft', ({ groupId, userId }) => {
-      // Update group members in store
-    });
+      socket.on('groupUserLeft', ({ groupId, userId }) => {
+        // Update group members in store
+      });
 
-    socket.on('groupUserRoleUpdated', ({ groupId, userId, role }) => {
-      // Update group member role in store
-    });
+      socket.on('groupUserRoleUpdated', ({ groupId, userId, role }) => {
+        // Update group member role in store
+      });
+    } catch (error) {
+      console.error('Error creating socket connection:', error);
+    }
 
     // Cleanup
     return () => {

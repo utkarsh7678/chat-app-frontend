@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { SocketProvider } from './context/socketContext';
 import { createAppTheme } from './utils/theme';
 import { useAuth, useTheme } from './store/useStore';
@@ -43,8 +43,8 @@ const App = () => {
 
   console.log('App render: isAuthenticated:', isAuthenticated, 'user:', user);
 
-  // Memoize the authentication check function
-  const checkAuthentication = useCallback(() => {
+  // Check authentication on app load - only once
+  useEffect(() => {
     if (authCheckRef.current) return;
     authCheckRef.current = true;
 
@@ -68,12 +68,7 @@ const App = () => {
       // No token but authenticated, clear state
       logout();
     }
-  }, [setUser, logout, isAuthenticated]);
-
-  // Check authentication on app load - only once
-  useEffect(() => {
-    checkAuthentication();
-  }, [checkAuthentication]);
+  }, []); // Empty dependency array to run only once
 
   return (
     <ThemeProvider theme={appTheme}>

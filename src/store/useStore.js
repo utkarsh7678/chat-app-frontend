@@ -14,8 +14,8 @@ const useStore = create(
       activeChat: null,
       activeGroup: null,
       messages: [],
-      onlineUsers: new Set(),
-      typingUsers: new Set(),
+      onlineUsers: [],
+      typingUsers: [],
 
       // User data
       friends: [],
@@ -56,8 +56,8 @@ const useStore = create(
           groups: [],
           friendRequests: [],
           messages: [],
-          onlineUsers: new Set(),
-          typingUsers: new Set()
+          onlineUsers: [],
+          typingUsers: []
         });
       },
 
@@ -100,18 +100,18 @@ const useStore = create(
       })),
 
       addOnlineUser: (userId) => set((state) => ({
-        onlineUsers: new Set([...state.onlineUsers, userId])
+        onlineUsers: [...new Set([...state.onlineUsers, userId])]
       })),
       removeOnlineUser: (userId) => set((state) => ({
-        onlineUsers: new Set([...state.onlineUsers].filter(id => id !== userId))
+        onlineUsers: state.onlineUsers.filter(id => id !== userId)
       })),
-      setOnlineUsers: (users) => set({ onlineUsers: new Set(users) }),
+      setOnlineUsers: (users) => set({ onlineUsers: users }),
 
       addTypingUser: (userId) => set((state) => ({
-        typingUsers: new Set([...state.typingUsers, userId])
+        typingUsers: [...new Set([...state.typingUsers, userId])]
       })),
       removeTypingUser: (userId) => set((state) => ({
-        typingUsers: new Set([...state.typingUsers].filter(id => id !== userId))
+        typingUsers: state.typingUsers.filter(id => id !== userId)
       })),
 
       toggleTheme: () => set((state) => ({

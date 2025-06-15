@@ -15,9 +15,13 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     console.log('Making request to:', config.url, config.data);
-    const token = useStore.getState().token;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const token = useStore.getState().token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error getting token from store:', error);
     }
     return config;
   },
@@ -36,7 +40,11 @@ api.interceptors.response.use(
   (error) => {
     console.error('Response error:', error.response?.data || error.message);
     if (error.response?.status === 401) {
-      useStore.getState().logout();
+      try {
+        useStore.getState().logout();
+      } catch (storeError) {
+        console.error('Error calling logout from store:', storeError);
+      }
     }
     return Promise.reject(error);
   }
