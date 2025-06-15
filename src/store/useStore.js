@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 
 const useStore = create(
   persist(
@@ -31,11 +32,19 @@ const useStore = create(
         console.log('setUser called with:', user);
         // Ensure user has required fields
         const validUser = user && typeof user === 'object' && (user._id || user.email);
-        set({ user: validUser ? user : null, isAuthenticated: !!validUser });
+        const currentUser = get().user;
+        
+        // Only update if the user data has actually changed
+        if (JSON.stringify(validUser) !== JSON.stringify(currentUser)) {
+          set({ user: validUser ? user : null, isAuthenticated: !!validUser });
+        }
       },
       setToken: (token) => {
         console.log('setToken called with:', token);
-        set({ token });
+        const currentToken = get().token;
+        if (token !== currentToken) {
+          set({ token });
+        }
       },
       logout: () => {
         console.log('Logout called');
@@ -128,6 +137,39 @@ const useStore = create(
       })
     }
   )
+);
+
+// Custom hooks for optimized selectors
+export const useAuth = () => useStore(
+  (state) => ({
+    user: state.user,
+    token: state.token,
+    isAuthenticated: state.isAuthenticated,
+    setUser: state.setUser,
+    setToken: state.setToken,
+    logout: state.logout
+  }),
+  shallow
+);
+
+export const useTheme = () => useStore(
+  (state) => ({
+    theme: state.theme,
+    toggleTheme: state.toggleTheme
+  }),
+  shallow
+);
+
+export const useUI = () => useStore(
+  (state) => ({
+    sidebarOpen: state.sidebarOpen,
+    toggleSidebar: state.toggleSidebar,
+    notifications: state.notifications,
+    addNotification: state.addNotification,
+    removeNotification: state.removeNotification,
+    clearNotifications: state.clearNotifications
+  }),
+  shallow
 );
 
 export default useStore; 

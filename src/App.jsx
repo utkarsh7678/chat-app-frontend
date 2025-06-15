@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { SocketProvider } from './context/socketContext';
 import { createAppTheme } from './utils/theme';
-import useStore from './store/useStore';
+import { useAuth, useTheme } from './store/useStore';
 
 // Layout
 import MainLayout from './components/layout/MainLayout';
@@ -22,25 +22,32 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, user } = useStore();
+  const { isAuthenticated, user } = useAuth();
   console.log('PrivateRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return isAuthenticated && user ? children : <Navigate to="/login" />;
 };
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, user } = useStore();
+  const { isAuthenticated, user } = useAuth();
   console.log('PublicRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return !isAuthenticated || !user ? children : <Navigate to="/dashboard" />;
 };
 
 const App = () => {
-  const { theme, isAuthenticated, user, setUser, logout } = useStore();
-  const appTheme = createAppTheme(theme);
+  const { theme } = useTheme();
+  const { isAuthenticated, user, setUser, logout } = useAuth();
+  const authCheckRef = useRef(false);
+
+  // Memoize the theme to prevent unnecessary recreations
+  const appTheme = useMemo(() => createAppTheme(theme), [theme]);
 
   console.log('App render: isAuthenticated:', isAuthenticated, 'user:', user);
 
-  // Check authentication on app load
-  useEffect(() => {
+  // Memoize the authentication check function
+  const checkAuthentication = useCallback(() => {
+    if (authCheckRef.current) return;
+    authCheckRef.current = true;
+
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
@@ -61,7 +68,12 @@ const App = () => {
       // No token but authenticated, clear state
       logout();
     }
-  }, []);
+  }, [setUser, logout, isAuthenticated]);
+
+  // Check authentication on app load - only once
+  useEffect(() => {
+    checkAuthentication();
+  }, [checkAuthentication]);
 
   return (
     <ThemeProvider theme={appTheme}>

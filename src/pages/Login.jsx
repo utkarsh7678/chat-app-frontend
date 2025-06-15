@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import useStore from '../store/useStore';
+import { useAuth } from '../store/useStore';
 import { auth } from '../services/api';
 
 const validationSchema = yup.object({
@@ -28,7 +28,7 @@ const validationSchema = yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setUser, setToken } = useStore();
+  const { setUser, setToken } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

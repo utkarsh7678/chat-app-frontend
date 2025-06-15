@@ -14,10 +14,24 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const socketRef = useRef();
-  const { user, token, addMessage, addOnlineUser, removeOnlineUser } = useStore();
+  const user = useStore((state) => state.user);
+  const token = useStore((state) => state.token);
+  const addMessage = useStore((state) => state.addMessage);
+  const addOnlineUser = useStore((state) => state.addOnlineUser);
+  const removeOnlineUser = useStore((state) => state.removeOnlineUser);
 
   useEffect(() => {
-    if (!user || !token) return;
+    if (!user || !token) {
+      // Clean up existing socket if user/token is removed
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    // Don't create a new socket if one already exists
+    if (socketRef.current) return;
 
     const socket = io(import.meta.env.VITE_SOCKET_URL, {
       auth: {
@@ -86,9 +100,12 @@ export const SocketProvider = ({ children }) => {
 
     // Cleanup
     return () => {
-      socket.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [user, token]);
+  }, [user, token, addMessage, addOnlineUser, removeOnlineUser]);
 
   const sendMessage = (message) => {
     if (!socketRef.current) return;
