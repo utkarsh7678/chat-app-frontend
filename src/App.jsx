@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, Component } from 'react';
 import { SocketProvider } from './context/socketContext';
 import { createAppTheme } from './utils/theme';
 import { useAuth, useTheme } from './store/useStore';
@@ -20,6 +20,38 @@ import Chat from './pages/Chat';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+
+// Error Boundary Component
+class AppErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('App Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <h2>Something went wrong.</h2>
+          <p>Error: {this.state.error?.message}</p>
+          <button onClick={() => window.location.reload()}>
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
@@ -45,19 +77,26 @@ const App = () => {
 
   // Check authentication on app load - only once
   useEffect(() => {
-    if (authCheckRef.current) return;
+    console.log('App useEffect triggered');
+    if (authCheckRef.current) {
+      console.log('Auth check already performed, skipping');
+      return;
+    }
     authCheckRef.current = true;
 
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
+    console.log('Auth check - token:', !!token, 'storedUser:', !!storedUser);
+    
     if (token && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && (parsedUser._id || parsedUser.email)) {
+          console.log('Setting user from localStorage');
           setUser(parsedUser);
         } else {
-          // Invalid user data, clear everything
+          console.log('Invalid user data, logging out');
           logout();
         }
       } catch (error) {
@@ -65,83 +104,85 @@ const App = () => {
         logout();
       }
     } else if (!token && isAuthenticated) {
-      // No token but authenticated, clear state
+      console.log('No token but authenticated, clearing state');
       logout();
     }
   }, []); // Empty dependency array to run only once
 
   return (
-    <ThemeProvider theme={appTheme}>
-      <CssBaseline />
-      <SocketProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <Login />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <Register />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                <PublicRoute>
-                  <ForgotPassword />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/reset-password"
-              element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/verify-email"
-              element={
-                <PublicRoute>
-                  <VerifyEmail />
-                </PublicRoute>
-              }
-            />
+    <AppErrorBoundary>
+      <ThemeProvider theme={appTheme}>
+        <CssBaseline />
+        <SocketProvider>
+          <Router>
+            <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <PublicRoute>
+                    <ForgotPassword />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <PublicRoute>
+                    <ResetPassword />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/verify-email"
+                element={
+                  <PublicRoute>
+                    <VerifyEmail />
+                  </PublicRoute>
+                }
+              />
 
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <MainLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="chat" element={<Chat />} />
-              <Route path="chat/:userId" element={<Chat />} />
-              <Route path="chat/group/:groupId" element={<Chat />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
+              {/* Protected routes */}
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <MainLayout />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="chat" element={<Chat />} />
+                <Route path="chat/:userId" element={<Chat />} />
+                <Route path="chat/group/:groupId" element={<Chat />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
 
-            {/* 404 route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </SocketProvider>
-    </ThemeProvider>
+              {/* 404 route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Router>
+        </SocketProvider>
+      </ThemeProvider>
+    </AppErrorBoundary>
   );
 };
 

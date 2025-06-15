@@ -6,11 +6,13 @@ import useStore from '../store/useStore';
 import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
+
 const Dashboard = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { activeUsers: socketActiveUsers, socketConnected, socket } = useSocket();
+  const { socket } = useSocket();
   const { friends, groups, setFriends, setGroups, onlineUsers } = useStore();
 
   const token = localStorage.getItem("token");
@@ -27,13 +29,17 @@ const Dashboard = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [groupRes, friendsRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_URL}/api/groups`, { headers }),
-          axios.get(`${import.meta.env.VITE_API_URL}/api/friends`, { headers }),
+          axios.get(`${API_URL}/api/groups`, { headers }),
+          axios.get(`${API_URL}/api/friends`, { headers }),
         ]);
 
         setGroups(groupRes.data);
         setFriends(friendsRes.data);
-        socket.emit("user-online");
+        
+        // Only emit if socket exists
+        if (socket) {
+          socket.emit("user-online");
+        }
       } catch (err) {
         console.error("❌ Error fetching dashboard data:", err);
       } finally {
@@ -52,14 +58,14 @@ const Dashboard = () => {
 
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/friends/add-friend`,
+        `${API_URL}/api/friends/add-friend`,
         { email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert(res.data.message);
       setEmail("");
       // Refresh friends list
-      const friendsRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/friends`, { 
+      const friendsRes = await axios.get(`${API_URL}/api/friends`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
       setFriends(friendsRes.data);
@@ -95,7 +101,7 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <h2>Welcome to ChatApp Dashboard</h2>
         <div className="connection-status">
-          Connection: {socketConnected ? "🟢 Connected" : "🔴 Disconnected"}
+          Connection: {socket ? "🟢 Connected" : "🔴 Disconnected"}
         </div>
       </div>
 
@@ -104,12 +110,12 @@ const Dashboard = () => {
         <div className="dashboard-section active-users-section">
           <div className="section-header">
             <h3>🟢 Active Users</h3>
-            <span className="user-count">{friends.filter(friend => isUserOnline(friend._id, Array.from(onlineUsers))).length} online</span>
+            <span className="user-count">{friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length} online</span>
           </div>
           <div className="users-list">
-            {friends.filter(friend => isUserOnline(friend._id, Array.from(onlineUsers))).length > 0 ? (
+            {friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length > 0 ? (
               friends
-                .filter(friend => isUserOnline(friend._id, Array.from(onlineUsers)))
+                .filter(friend => isUserOnline(friend._id, onlineUsers))
                 .map((user) => (
                   <div 
                     key={user._id} 
@@ -149,7 +155,7 @@ const Dashboard = () => {
               friends.map((friend) => (
                 <div 
                   key={friend._id} 
-                  className={`user-item ${isUserOnline(friend._id, Array.from(onlineUsers)) ? 'active-user' : 'inactive-user'}`}
+                  className={`user-item ${isUserOnline(friend._id, onlineUsers) ? 'active-user' : 'inactive-user'}`}
                   onClick={() => handleChat(friend._id, "user")}
                 >
                   <div className="user-avatar">
@@ -158,12 +164,12 @@ const Dashboard = () => {
                       alt={friend.username} 
                       className="avatar-img"
                     />
-                    <div className={`status-indicator ${isUserOnline(friend._id, Array.from(onlineUsers)) ? 'online' : 'offline'}`}></div>
+                    <div className={`status-indicator ${isUserOnline(friend._id, onlineUsers) ? 'online' : 'offline'}`}></div>
                   </div>
                   <div className="user-info">
                     <span className="username">{friend.username}</span>
                     <span className="status">
-                      {isUserOnline(friend._id, Array.from(onlineUsers)) ? "🟢 Online" : "⚪ Offline"}
+                      {isUserOnline(friend._id, onlineUsers) ? "🟢 Online" : "⚪ Offline"}
                     </span>
                   </div>
                 </div>
@@ -202,15 +208,12 @@ const Dashboard = () => {
                     <span className="group-name">{group.name}</span>
                     <span className="member-count">{group.members?.length || 0} members</span>
                   </div>
-                  <div className="group-action">
-                    <span className="chat-icon">💬</span>
-                  </div>
                 </div>
               ))
             ) : (
               <div className="empty-state">
-                <p>No groups available</p>
-                <p className="empty-hint">Join or create groups to start group chats!</p>
+                <p>No groups yet</p>
+                <p className="empty-hint">Create or join groups to start group chats!</p>
               </div>
             )}
           </div>
@@ -228,13 +231,9 @@ const Dashboard = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyPress={handleKeyPress}
-              className="friend-email-input"
+              className="email-input"
             />
-            <button 
-              onClick={handleAddFriend}
-              className="add-friend-btn"
-              disabled={!email.trim()}
-            >
+            <button onClick={handleAddFriend} className="add-friend-btn">
               Add Friend
             </button>
           </div>
