@@ -25,7 +25,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../../store/useStore';
 import { getThemeColors } from '../../utils/theme';
 import { isUserOnline } from '../../utils/presence';
-import Avatar from '../components/Avatar';
+import Avatar from '../Avatar';
 
 const drawerWidth = 240;
 
