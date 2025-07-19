@@ -65,9 +65,9 @@ export const auth = {
 };
 
 export const users = {
-  getProfile: () => api.get('/users/profile'),
-  updateProfile: (data) => api.put('/users/profile', data),
-  updateAvatar: (formData) => api.put('/users/avatar', formData, {
+  getProfile: () => api.get('/api/users/profile'),
+  updateProfile: (data) => api.put('/api/users/profile', data),
+  updateAvatar: (formData) => api.put('/api/users/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
