@@ -24,7 +24,7 @@ import useStore from '../../store/useStore';
 import { getThemeColors } from '../../utils/theme';
 import { setupActivityListeners } from '../../utils/presence';
 import { useEffect } from 'react';
-import Avatar from '../components/Avatar';
+import Avatar from '../Avatar';
 
 const Header = () => {
   const theme = useTheme();
