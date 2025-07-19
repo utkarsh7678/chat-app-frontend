@@ -32,19 +32,11 @@ const useStore = create(
         console.log('setUser called with:', user);
         // Ensure user has required fields
         const validUser = user && typeof user === 'object' && (user._id || user.email);
-        const currentUser = get().user;
-        
-        // Only update if the user data has actually changed
-        if (JSON.stringify(validUser) !== JSON.stringify(currentUser)) {
-          set({ user: validUser ? user : null, isAuthenticated: !!validUser });
-        }
+        set({ user: validUser ? user : null, isAuthenticated: !!validUser });
       },
       setToken: (token) => {
         console.log('setToken called with:', token);
-        const currentToken = get().token;
-        if (token !== currentToken) {
-          set({ token });
-        }
+        set({ token });
       },
       logout: () => {
         console.log('Logout called');

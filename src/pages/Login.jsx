@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import { useAuth } from '../store/useStore';
+import useStore from '../store/useStore';
 import { auth } from '../services/api';
 
 const validationSchema = yup.object({
@@ -28,7 +28,7 @@ const validationSchema = yup.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setUser, setToken } = useAuth();
+  const { setUser, setToken } = useStore();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -49,18 +49,22 @@ const Login = () => {
         // Use the actual user data from the response
         if (response.data.user) {
           setUser(response.data.user);
+          localStorage.setItem('user', JSON.stringify(response.data.user));
         } else {
           // Fallback if user data is not in response
-          setUser({ 
+          const fallbackUser = { 
             email: values.email, 
             _id: response.data.userId || 'temp-id',
             username: values.email.split('@')[0],
             isAuthenticated: true 
-          });
+          };
+          setUser(fallbackUser);
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
         }
         
         console.log('User set in store:', response.data.user);
         setToken(response.data.token);
+        localStorage.setItem('token', response.data.token);
         console.log('Token set in store:', response.data.token);
         console.log('Navigating to /dashboard');
         navigate('/dashboard');

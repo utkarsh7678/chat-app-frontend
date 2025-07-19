@@ -4,7 +4,7 @@ import { CssBaseline } from '@mui/material';
 import { useEffect, useRef, useMemo, Component } from 'react';
 import { SocketProvider } from './context/socketContext';
 import { createAppTheme } from './utils/theme';
-import { useAuth, useTheme } from './store/useStore';
+import useStore from './store/useStore';
 
 // Layout
 import MainLayout from './components/layout/MainLayout';
@@ -54,20 +54,19 @@ class AppErrorBoundary extends Component {
 }
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useStore();
   console.log('PrivateRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return isAuthenticated && user ? children : <Navigate to="/login" />;
 };
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useStore();
   console.log('PublicRoute: isAuthenticated:', isAuthenticated, 'user:', user);
   return !isAuthenticated || !user ? children : <Navigate to="/dashboard" />;
 };
 
 const App = () => {
-  const { theme } = useTheme();
-  const { isAuthenticated, user, setUser, logout } = useAuth();
+  const { theme, isAuthenticated, user, setUser, logout } = useStore();
   const authCheckRef = useRef(false);
 
   // Memoize the theme to prevent unnecessary recreations
