@@ -29,7 +29,7 @@ import {
   isSelfDestructing,
   getSelfDestructTimeRemaining
 } from '../../utils/messageUtils';
-import Avatar from '../../Avatar';
+import Avatar from '../Avatar';
 
 const MessageList = ({ messages, onMessageMenuOpen }) => {
   const colors = getThemeColors();

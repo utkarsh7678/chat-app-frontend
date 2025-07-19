@@ -40,7 +40,7 @@ import {
 import { prepareFileForUpload } from '../../utils/fileHandler';
 import { messages as messageApi } from '../../services/api';
 import MessageList from './MessageList';
-import Avatar from '../../Avatar';
+import Avatar from '../Avatar';
 
 const ChatWindow = () => {
   const { userId } = useParams();
