@@ -14,7 +14,7 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
 import { users } from '../services/api';
-import Avatar from '../Avatar';
+import Avatar from '../components/Avatar';
 
 const validationSchema = yup.object({
   username: yup
