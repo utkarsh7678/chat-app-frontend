@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
-  Avatar,
   IconButton,
   Menu,
   MenuItem,
@@ -30,6 +29,7 @@ import {
   isSelfDestructing,
   getSelfDestructTimeRemaining
 } from '../../utils/messageUtils';
+import Avatar from '../../Avatar';
 
 const MessageList = ({ messages, onMessageMenuOpen }) => {
   const colors = getThemeColors();

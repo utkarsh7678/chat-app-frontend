@@ -7,7 +7,6 @@ import {
   TextField,
   Button,
   Paper,
-  Avatar,
   IconButton,
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
@@ -15,6 +14,7 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
 import { users } from '../services/api';
+import Avatar from '../components/Avatar';
 
 const validationSchema = yup.object({
   username: yup

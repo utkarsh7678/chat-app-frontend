@@ -25,6 +25,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../../store/useStore';
 import { getThemeColors } from '../../utils/theme';
 import { isUserOnline } from '../../utils/presence';
+import Avatar from '../components/Avatar';
 
 const drawerWidth = 240;
 
@@ -108,16 +109,10 @@ const Sidebar = () => {
                   variant="dot"
                   color={isUserOnline(friend._id, Array.from(onlineUsers)) ? 'success' : 'default'}
                 >
-                  <Box
-                    component="img"
+                  <Avatar
                     src={friend.avatar}
                     alt={friend.username}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      objectFit: 'cover'
-                    }}
+                    size={32}
                   />
                 </Badge>
               </ListItemIcon>
@@ -147,16 +142,10 @@ const Sidebar = () => {
               onClick={() => handleNavigation(`/chat/group/${group._id}`)}
             >
               <ListItemIcon>
-                <Box
-                  component="img"
+                <Avatar
                   src={group.avatar}
                   alt={group.name}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    objectFit: 'cover'
-                  }}
+                  size={32}
                 />
               </ListItemIcon>
               <ListItemText

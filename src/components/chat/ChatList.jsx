@@ -4,9 +4,6 @@ import {
   ListItemButton,
   ListItemAvatar,
   ListItemText,
-  Avatar,
-  Typography,
-  Box,
   Badge,
   Divider
 } from '@mui/material';
@@ -15,6 +12,7 @@ import useStore from '../../store/useStore';
 import { isUserOnline } from '../../utils/presence';
 import { getMessagePreview, formatMessageTime } from '../../utils/messageUtils';
 import { getThemeColors } from '../../utils/theme';
+import Avatar from '../../Avatar';
 
 const ChatList = () => {
   const navigate = useNavigate();
