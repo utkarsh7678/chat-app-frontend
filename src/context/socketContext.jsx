@@ -36,6 +36,7 @@ export const SocketProvider = ({ children }) => {
     // Use the environment variable for socket URL
     const socketUrl = import.meta.env.VITE_SOCKET_URL;
     console.log('Socket URL:', socketUrl);
+    console.log('All env variables:', import.meta.env); // Debug log
 
     if (!socketUrl) {
       console.warn('VITE_SOCKET_URL is not defined, skipping socket connection');
