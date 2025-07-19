@@ -7,7 +7,6 @@ import {
   Badge,
   Menu,
   MenuItem,
-  Avatar,
   Box,
   useMediaQuery,
   useTheme
