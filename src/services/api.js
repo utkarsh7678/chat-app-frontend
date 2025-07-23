@@ -64,25 +64,25 @@ export const auth = {
   verifyResetPasswordOtp: (data) => api.post('/auth/reset-password', data),
 };
 
-export const users = {
-  getProfile: () => api.get('/api/users/profile'),
-  updateProfile: (data) => api.put('/api/users/profile', data),
+export const user = {
+  getProfile: () => api.get('/api/user/profile'),
+  updateProfile: (data) => api.put('/api/user/profile', data),
   updateAvatar: (formData) => {
     const token = useStore.getState().token;
-    return api.put('/api/users/avatar', formData, {
+    return api.put('/api/user/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
         ...(token && { Authorization: `Bearer ${token}` })
       }
     });
   },
-  updatePassword: (data) => api.put('/users/password', data),
-  search: (query) => api.get(`/users/search?q=${query}`),
-  getFriends: () => api.get('/users/friends'),
-  sendFriendRequest: (userId) => api.post(`/users/friends/request/${userId}`),
-  acceptFriendRequest: (requestId) => api.post(`/users/friends/accept/${requestId}`),
-  rejectFriendRequest: (requestId) => api.post(`/users/friends/reject/${requestId}`),
-  removeFriend: (userId) => api.delete(`/users/friends/${userId}`)
+  updatePassword: (data) => api.put('/user/password', data),
+  search: (query) => api.get(`/user/search?q=${query}`),
+  getFriends: () => api.get('/user/friends'),
+  sendFriendRequest: (userId) => api.post(`/user/friends/request/${userId}`),
+  acceptFriendRequest: (requestId) => api.post(`/user/friends/accept/${requestId}`),
+  rejectFriendRequest: (requestId) => api.post(`/user/friends/reject/${requestId}`),
+  removeFriend: (userId) => api.delete(`/user/friends/${userId}`)
 };
 
 export const messages = {
@@ -143,7 +143,7 @@ export const uploadAvatar = async (file, token) => {
 
 export default {
   auth,
-  users,
+  user,
   messages,
   groups,
   notifications
