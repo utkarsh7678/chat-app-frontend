@@ -14,6 +14,7 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
 import { auth } from '../services/api';
+import { uploadAvatar } from '../services/api';
 
 const validationSchema = yup.object({
   username: yup
@@ -48,6 +49,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [registrationData, setRegistrationData] = useState(null);
+  const [avatar, setAvatar] = useState(null);
 
   const formik = useFormik({
     initialValues: {
@@ -86,10 +88,17 @@ const Register = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await auth.verifyRegistrationOtp({
-          ...registrationData,
-          otp: values.otp,
-        });
+        // Prepare FormData for registration with avatar
+        const formData = new FormData();
+        formData.append('username', registrationData.username);
+        formData.append('email', registrationData.email);
+        formData.append('password', registrationData.password);
+        formData.append('otp', values.otp);
+        if (avatar) {
+          formData.append('avatar', avatar);
+        }
+        // Send registration request with avatar
+        const response = await auth.register(formData);
         setUser(response.data.user);
         setToken(response.data.token);
         navigate('/chat');
@@ -132,6 +141,12 @@ const Register = () => {
               onSubmit={otpFormik.handleSubmit}
               sx={{ mt: 1, width: '100%' }}
             >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e => setAvatar(e.target.files[0])}
+                style={{ margin: '16px 0' }}
+              />
               <TextField
                 margin="normal"
                 required
@@ -158,7 +173,7 @@ const Register = () => {
                 sx={{ mt: 3, mb: 2 }}
                 disabled={loading}
               >
-                {loading ? <CircularProgress size={24} /> : 'Verify OTP'}
+                {loading ? <CircularProgress size={24} /> : 'Verify OTP & Register'}
               </Button>
               <Button
                 fullWidth
