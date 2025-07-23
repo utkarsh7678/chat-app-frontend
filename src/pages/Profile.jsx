@@ -66,6 +66,7 @@ const Profile = () => {
       setSuccess('Avatar updated successfully');
       setError('');
     } catch (err) {
+       console.error('Avatar upload error:', err); // ✅ Log full error
       setError(err.response?.data?.message || 'An error occurred');
       setSuccess('');
     }
