@@ -60,7 +60,7 @@ const Profile = () => {
 
     try {
       const formData = new FormData();
-      formData.append('profilePic', file);
+      formData.append('avatar', file);
       const response = await users.updateAvatar(formData);
       setUser(response.data.user);
       setSuccess('Avatar updated successfully');
