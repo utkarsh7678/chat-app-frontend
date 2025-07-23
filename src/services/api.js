@@ -71,7 +71,7 @@ export const user = {
     const token = useStore.getState().token;
     return api.put('/api/user/avatar', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        //'Content-Type': 'multipart/form-data',
         ...(token && { Authorization: `Bearer ${token}` })
       }
     });
