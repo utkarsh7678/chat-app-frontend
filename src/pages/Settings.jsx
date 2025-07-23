@@ -14,7 +14,7 @@ import {
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import useStore from '../store/useStore';
-import { users } from '../services/api';
+import { user } from '../services/api';
 
 const validationSchema = yup.object({
   currentPassword: yup
