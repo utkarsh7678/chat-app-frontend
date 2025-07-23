@@ -67,11 +67,15 @@ export const auth = {
 export const users = {
   getProfile: () => api.get('/api/users/profile'),
   updateProfile: (data) => api.put('/api/users/profile', data),
-  updateAvatar: (formData) => api.put('/api/users/avatar', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  }),
+  updateAvatar: (formData) => {
+    const token = useStore.getState().token;
+    return api.put('/api/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(token && { Authorization: `Bearer ${token}` })
+      }
+    });
+  },
   updatePassword: (data) => api.put('/users/password', data),
   search: (query) => api.get(`/users/search?q=${query}`),
   getFriends: () => api.get('/users/friends'),
