@@ -14,7 +14,7 @@ const ProfileUpload = ({ userId }) => {
         }
 
         const formData = new FormData();
-        formData.append("profilePic", file);
+        formData.append("avatar", file);
 
         try {
             const response = await axios.post(
