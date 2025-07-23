@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useSocket } from '../context/socketContext';
+import { useSocket } from '../context/SocketContext';
 import useStore from '../store/useStore';
 import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";

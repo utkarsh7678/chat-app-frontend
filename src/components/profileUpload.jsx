@@ -1,10 +1,12 @@
 // src/components/ProfileUpload.jsx
 import React, { useState } from "react";
+import useStore from "../store/useStore"; // ✅ Make sure this path is correct
 import axios from "axios";
 
 const ProfileUpload = ({ userId }) => {
     const [file, setFile] = useState(null);
     const [uploadMessage, setUploadMessage] = useState("");
+    const token = useStore((state) => state.token); // ✅ Get token from store
 
     const handleUpload = async () => {
         if (!file) {
@@ -17,11 +19,17 @@ const ProfileUpload = ({ userId }) => {
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_API_URL}/api/upload/profile-picture/${userId}`,
-                formData
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: `Bearer ${token}`, // ✅ Add token here
+                    },
+                }
             );
             setUploadMessage("✅ " + response.data.message);
         } catch (error) {
-            console.error("Upload error:", error);
+            console.error("Upload error:", error.response?.data || error.message);
             setUploadMessage("❌ Upload failed");
         }
     };
@@ -41,3 +49,4 @@ const ProfileUpload = ({ userId }) => {
 };
 
 export default ProfileUpload;
+

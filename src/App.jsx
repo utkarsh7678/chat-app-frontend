@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { useEffect, useRef, useMemo, Component } from 'react';
-import { SocketProvider } from './context/socketContext';
+import { SocketProvider } from './context/SocketContext';
 import { createAppTheme } from './utils/theme';
 import useStore from './store/useStore';
 

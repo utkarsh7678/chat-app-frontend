@@ -15,7 +15,7 @@ import {
   Edit as EditIcon,
   Timer as TimerIcon
 } from '@mui/icons-material';
-import { useSocket } from '../../context/socketContext';
+import { useSocket } from '../../context/SocketContext';
 import { getThemeColors } from '../../utils/theme';
 import {
   formatMessageTime,
