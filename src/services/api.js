@@ -130,7 +130,7 @@ export const uploadAvatar = async (file, token) => {
   const formData = new FormData();
   formData.append('avatar', file);
   return axios.put(
-    'https://realtime-chat-api-z27k.onrender.com/api/user/avatar',
+    'api/user/avatar',
     formData,
     {
       headers: {
