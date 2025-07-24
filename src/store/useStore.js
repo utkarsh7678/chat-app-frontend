@@ -6,47 +6,95 @@ const useStore = create(
   persist(
     (set, get) => ({
 
-      //avtar
+      // Avatar upload function
       updateAvatar: async (formData) => {
-  const token = get().token;
- const userId = get().user?._id;
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`
+        const token = get().token;
+        const userId = get().user?._id;
+        
+        // Validation checks
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+        
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+        
+        if (!formData || !formData.has('avatar')) {
+          throw new Error("No avatar file provided");
+        }
+        
+        console.log('Uploading avatar for user:', userId);
+        console.log('API URL:', import.meta.env.VITE_API_URL);
+        
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`
+              // Don't set Content-Type for FormData - browser sets it automatically with boundary
+            },
+            body: formData
+          });
+          
+          console.log('Response status:', response.status);
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+          
+          if (!response.ok) {
+            let errorMessage;
+            const contentType = response.headers.get("content-type");
+            
+            if (contentType && contentType.includes("application/json")) {
+              try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+                console.error("Avatar upload failed (JSON):", errorData);
+              } catch (parseError) {
+                errorMessage = `HTTP ${response.status} - Failed to parse error response`;
+                console.error("Failed to parse error JSON:", parseError);
+              }
+            } else {
+              errorMessage = await response.text();
+              console.error("Avatar upload failed (Text):", errorMessage);
+            }
+            
+            throw new Error(`Avatar upload failed: ${errorMessage}`);
+          }
+          
+          const contentType = response.headers.get("content-type");
+          
+          if (!contentType || !contentType.includes("application/json")) {
+            console.warn("Response is not JSON. Skipping JSON parsing.");
+            return { success: true };
+          }
+          
+          const data = await response.json();
+          console.log('Avatar upload successful:', data);
+          
+          // Update user profile with new avatar
+          const updatedUser = { 
+            ...get().user, 
+            profilePicture: {
+              url: data.path || data.url,
+              key: data.key || (data.path ? data.path.split('/').pop() : null),
+              lastUpdated: new Date()
+            }
+          };
+          
+          set({ user: updatedUser });
+          return data;
+          
+        } catch (error) {
+          console.error("updateAvatar error:", error);
+          
+          // Re-throw with more context if it's a network error
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Network error: Unable to connect to server');
+          }
+          
+          throw error;
+        }
       },
-      body: formData
-    });
-
-    const contentType = response.headers.get("content-type");
-
-if (!response.ok) {
-  const errorText = await response.text();
-  console.error("Avatar upload failed:", errorText);
-  throw new Error("Failed to upload avatar");
-}
-
-if (!contentType || !contentType.includes("application/json")) {
-  console.warn("Response is not JSON. Skipping JSON parsing.");
-  return {};
-}
-
-const data = await response.json();
-
-    const updatedUser = { ...get().user, profilePicture:  {
-
-    url:data.path,
-    key: data.path.split('/').pop(), 
-    lastUpdated:new Date()
-    }};
-      set({ user: updatedUser });
-    return data;
-  } catch (error) {
-    console.error("updateAvatar error:", error);
-    throw error;
-  }
-},
 
       // Auth state
       user: null,
