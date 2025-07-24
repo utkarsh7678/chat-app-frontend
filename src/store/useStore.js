@@ -37,7 +37,8 @@ const data = await response.json();
     const updatedUser = { ...get().user, profilePicture:  {
 
     url:data.path,
-      lastUpdated:new Date()
+    key: data.path.split('/').pop(), 
+    lastUpdated:new Date()
     }};
       set({ user: updatedUser });
     return data;
