@@ -11,7 +11,7 @@ const useStore = create(
   const token = get().token;
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/avatar`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`
@@ -19,11 +19,21 @@ const useStore = create(
       body: formData
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to upload avatar");
-    }
+    const contentType = response.headers.get("content-type");
 
-    const data = await response.json();
+if (!response.ok) {
+  const errorText = await response.text();
+  console.error("Avatar upload failed:", errorText);
+  throw new Error("Failed to upload avatar");
+}
+
+if (!contentType || !contentType.includes("application/json")) {
+  console.warn("Response is not JSON. Skipping JSON parsing.");
+  return {};
+}
+
+const data = await response.json();
+
     const updatedUser = { ...get().user, profilePicture: data.profilePicture };
 
     set({ user: updatedUser });
