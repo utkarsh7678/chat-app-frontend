@@ -12,7 +12,7 @@ const useStore = create(
  const userId = get().user?._id;
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-      method: "POST",
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`
       },
