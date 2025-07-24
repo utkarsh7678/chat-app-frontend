@@ -144,7 +144,7 @@ const Profile = () => {
         >
           <Box sx={{ position: 'relative', mb: 3 }}>
             <Avatar
-              src={user?.avatar}
+              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
               alt={user?.username}
               sx={{ width: 100, height: 100 }}
             />
