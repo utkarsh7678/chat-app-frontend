@@ -9,10 +9,10 @@ const useStore = create(
       //avtar
       updateAvatar: async (formData) => {
   const token = get().token;
-
+ const userId = get().user?._id;
   try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-      method: "PUT",
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`
       },
@@ -34,9 +34,12 @@ if (!contentType || !contentType.includes("application/json")) {
 
 const data = await response.json();
 
-    const updatedUser = { ...get().user, profilePicture: data.profilePicture };
+    const updatedUser = { ...get().user, profilePicture:  {
 
-    set({ user: updatedUser });
+    url:data.path,
+      lastUpdated:new Date()
+    }};
+      set({ user: updatedUser });
     return data;
   } catch (error) {
     console.error("updateAvatar error:", error);
