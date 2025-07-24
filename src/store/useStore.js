@@ -5,6 +5,35 @@ import { shallow } from 'zustand/shallow';
 const useStore = create(
   persist(
     (set, get) => ({
+
+      //avtar
+      updateAvatar: async (formData) => {
+  const token = get().token;
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/avatar`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload avatar");
+    }
+
+    const data = await response.json();
+    const updatedUser = { ...get().user, profilePicture: data.profilePicture };
+
+    set({ user: updatedUser });
+    return data;
+  } catch (error) {
+    console.error("updateAvatar error:", error);
+    throw error;
+  }
+},
+
       // Auth state
       user: null,
       token: null,
