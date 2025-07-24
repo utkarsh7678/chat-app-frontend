@@ -61,14 +61,12 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const response = await user.updateAvatar(formData);
-      setUser(response.data.user);
-      setSuccess('Avatar updated successfully');
-      setError('');
+       const updateAvatar = useStore((state) => state.updateAvatar);
+      await updateAvatar(formData);
+        console.log("Avatar uploaded");
     } catch (err) {
        console.error('Avatar upload error:', err); // ✅ Log full error
-      setError(err.response?.data?.message || 'An error occurred');
-      setSuccess('');
+     
     }
   };
 
