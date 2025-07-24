@@ -33,6 +33,7 @@ const Profile = () => {
   const { user, setUser } = useStore();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
