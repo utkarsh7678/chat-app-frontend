@@ -61,7 +61,8 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-       const updateAvatar = useStore((state) => state.updateAvatar);
+       const updateAvatar = useStore.getState().updateAvatar; // ✅ Safe way
+       
       await updateAvatar(formData);
         console.log("Avatar uploaded");
     } catch (err) {
