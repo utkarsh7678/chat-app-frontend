@@ -58,16 +58,66 @@ const Profile = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Validate file type and size
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select a valid image file (JPEG, PNG, or GIF)');
+      return;
+    }
+
+    if (file.size > maxSize) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-       const updateAvatar = useStore.getState().updateAvatar; // ✅ Safe way
-       
-      await updateAvatar(formData);
-        console.log("Avatar uploaded");
+      
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+      
+      const updateAvatar = useStore.getState().updateAvatar;
+      const result = await updateAvatar(formData);
+      
+      console.log("Avatar uploaded successfully:", result);
+      setSuccess('Avatar updated successfully!');
+      
+      // Clear the file input
+      event.target.value = '';
+      
     } catch (err) {
-       console.error('Avatar upload error:', err); // ✅ Log full error
-     
+      console.error('Avatar upload error:', err);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to upload avatar. Please try again.';
+      
+      if (err.message.includes('Network error')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (err.message.includes('authentication')) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (err.message.includes('No avatar file')) {
+        errorMessage = 'Please select a file to upload.';
+      } else if (err.message.includes('HTTP 413')) {
+        errorMessage = 'File is too large. Please select a smaller image.';
+      } else if (err.message.includes('HTTP 415')) {
+        errorMessage = 'Unsupported file type. Please select a JPEG, PNG, or GIF image.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
