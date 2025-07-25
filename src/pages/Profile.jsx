@@ -15,7 +15,6 @@ import * as yup from 'yup';
 import useStore from '../store/useStore';
 import { user as userApi  } from '../services/api';
 import Avatar from '../components/Avatar';
-import AvatarDebug from '../components/AvatarDebug';
 
 const validationSchema = yup.object({
   username: yup
@@ -35,6 +34,16 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Debug logging for avatar
+  console.log('🔍 Profile Debug:');
+  console.log('User:', user);
+  console.log('Has profilePicture:', !!user?.profilePicture);
+  console.log('Avatar URL:', user?.profilePicture?.url);
+  console.log('API URL:', import.meta.env.VITE_API_URL);
+  if (user?.profilePicture?.url) {
+    console.log('Full Avatar URL:', `${import.meta.env.VITE_API_URL}${user.profilePicture.url}`);
+  }
 
   const formik = useFormik({
     initialValues: {
@@ -125,7 +134,6 @@ const Profile = () => {
 
   return (
     <Container component="main" maxWidth="sm">
-      <AvatarDebug />
       <Box
         sx={{
           marginTop: 8,
