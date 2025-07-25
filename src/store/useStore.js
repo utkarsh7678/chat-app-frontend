@@ -209,7 +209,73 @@ const useStore = create(
       removeNotification: (id) => set((state) => ({
         notifications: state.notifications.filter(n => n.id !== id)
       })),
-      clearNotifications: () => set({ notifications: [] })
+      clearNotifications: () => set({ notifications: [] }),
+
+      // Avatar upload function
+      updateAvatar: async (formData) => {
+        const token = get().token;
+        const userId = get().user?._id;
+        
+        // Validation checks
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+        
+        if (!userId) {
+          throw new Error("User ID not found");
+        }
+        
+        if (!formData || !formData.has('avatar')) {
+          throw new Error("No avatar file provided");
+        }
+        
+        console.log('Uploading avatar for user:', userId);
+        console.log('API URL:', import.meta.env.VITE_API_URL);
+        
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            },
+            body: formData
+          });
+          
+          console.log('Avatar upload response status:', response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Avatar upload failed:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Avatar upload successful:', data);
+          
+          // Update user in store with new avatar
+          const updatedUser = { 
+            ...get().user, 
+            profilePicture: {
+              url: data.path || data.url,
+              key: data.key || (data.path ? data.path.split('/').pop() : null),
+              lastUpdated: new Date()
+            }
+          };
+          
+          set({ user: updatedUser });
+          return data;
+          
+        } catch (error) {
+          console.error("updateAvatar error:", error);
+          
+          // Re-throw with more context if it's a network error
+          if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Network error: Unable to connect to server');
+          }
+          
+          throw error;
+        }
+      }
     }),
     {
       name: 'chat-app-storage',
