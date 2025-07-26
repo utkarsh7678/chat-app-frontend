@@ -279,23 +279,49 @@ const useStore = create(
           console.log('Avatar upload successful:', data);
           
           // Update user data in the store based on the response format
+          console.log('Processing avatar upload response:', data);
+          
           if (data.user) {
             // New format with complete user object
-            set({ user: { ...get().user, ...data.user } });
-          } else if (data.avatarUrl) {
+            console.log('Using user object from response');
+            set({ 
+              user: { 
+                ...get().user, 
+                ...data.user,
+                // Ensure profilePicture has all required fields
+                profilePicture: {
+                  ...(data.user.profilePicture || {}),
+                  versions: data.user.profilePicture?.versions || {
+                    original: data.user.avatar || '',
+                    large: data.user.avatar || '',
+                    medium: data.user.avatar || '',
+                    small: data.user.avatar || ''
+                  },
+                  publicId: data.user.profilePicture?.publicId || null,
+                  lastUpdated: data.user.profilePicture?.lastUpdated || new Date().toISOString()
+                }
+              } 
+            });
+          } else if (data.avatarUrl || data.publicId) {
             // Legacy format with just avatar URL
+            console.log('Using legacy avatar URL format');
             set({ 
               user: { 
                 ...get().user, 
                 avatar: data.avatarUrl,
                 profilePicture: { 
-                  url: data.avatarUrl,
+                  versions: {
+                    original: data.avatarUrl || '',
+                    large: data.avatarUrl || '',
+                    medium: data.avatarUrl || '',
+                    small: data.avatarUrl || ''
+                  },
                   publicId: data.publicId || null,
                   lastUpdated: new Date().toISOString()
                 } 
               } 
             });
-          } else if (data.profilePicture) {
+          } else if (data.versions?.original) {
             // Format with profile picture object
             set({ 
               user: { 
