@@ -5,121 +5,66 @@ import { shallow } from 'zustand/shallow';
 const useStore = create(
   persist(
     (set, get) => ({
-      // Avatar upload function with Cloudinary integration and retry logic
+      // Avatar upload function with improved error handling
       updateAvatar: async (formData) => {
         const token = get().token;
-        const userId = get().user?._id;
+        const user = get().user;
         
         if (!token) {
-          throw new Error("No authentication token found. Please log in again.");
-        }
-        
-        if (!userId) {
-          throw new Error("User ID not found. Please refresh the page and try again.");
+          throw new Error('Please log in to upload an avatar');
         }
         
         if (!formData || !formData.has('avatar')) {
-          throw new Error("Please select an image file to upload.");
+          throw new Error('Please select an image file');
         }
-        
-        const apiUrl = import.meta.env.VITE_API_URL ;
-        const endpoint = `${apiUrl}/api/user/upload-avatar`;
-        
-        console.log('Starting avatar upload for user:', userId);
-        
-        // Function to attempt the upload with retries
-        const attemptUpload = async (attempt = 1, maxAttempts = 3) => {
-          try {
-            console.log(`Upload attempt ${attempt} of ${maxAttempts}`);
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-            
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              },
-              body: formData,
-              signal: controller.signal,
-              credentials: 'include',
-              mode: 'cors'
-            });
-            
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error) {
-            console.error(`Upload attempt ${attempt} failed:`, error);
-            if (attempt >= maxAttempts) throw error;
-            
-            // Wait before retrying (exponential backoff)
-            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-            console.log(`Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return attemptUpload(attempt + 1, maxAttempts);
-          }
-        };
-        
+
         try {
-          const response = await attemptUpload();
-          console.log('Avatar upload response status:', response.status);
+          // Set loading state
+          set({ isLoading: true, error: null });
           
-          // Clone the response to read it multiple times if needed
-          const responseClone = response.clone();
-          let data;
-          
-          try {
-            // First try to parse as JSON
-            data = await response.json();
-          } catch (jsonError) {
-            console.error('Error parsing JSON response:', jsonError);
-            // If JSON parsing fails, try to get the response as text
-            const errorText = await responseClone.text();
-            console.error('Response text:', errorText);
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-          }
-          
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com'}/api/user/upload-avatar`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              // Let the browser set the Content-Type with boundary
+            },
+            body: formData,
+            credentials: 'include' // Important for cookies/sessions
+          });
+
+          const data = await response.json().catch(() => ({
+            message: 'Invalid server response',
+          }));
+
           if (!response.ok) {
-            console.error('Avatar upload failed:', data);
-            const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
-            throw new Error(errorMessage);
+            throw new Error(data.message || `Server error: ${response.status}`);
           }
-          
-          console.log('Avatar upload successful:', data);
-          
-          if (!data.profilePicture) {
-            console.warn('No profile picture data in response:', data);
-            throw new Error('Invalid response from server: missing profile picture data');
+
+          // Update user data with the new avatar
+          if (data.user) {
+            set({ 
+              user: { ...user, ...data.user },
+              isLoading: false 
+            });
+          } else if (data.avatarUrl) {
+            // Handle case where backend returns just the avatar URL
+            const updatedUser = { 
+              ...user, 
+              avatar: data.avatarUrl,
+              profilePicture: { url: data.avatarUrl }
+            };
+            set({ user: updatedUser, isLoading: false });
+          } else {
+            throw new Error('Invalid response from server');
           }
-          
-          // Update user in store with new avatar data
-          const updatedUser = { 
-            ...get().user,
-            profilePicture: {
-              versions: data.profilePicture.versions,
-              publicId: data.profilePicture.publicId,
-              lastUpdated: new Date()
-            }
-          };
-          
-          set({ user: updatedUser });
+
           return data;
-          
         } catch (error) {
-          console.error("Avatar upload error:", error);
-          
-          // Enhance error messages for better user feedback
-          if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
-          }
-          
-          if (error.name === 'AbortError') {
-            throw new Error('Upload timed out. Please try again.');
-          }
-          
+          console.error('Avatar upload failed:', error);
+          set({ 
+            error: error.message || 'Failed to upload avatar',
+            isLoading: false 
+          });
           throw error;
         }
       },
@@ -271,7 +216,6 @@ const useStore = create(
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
-                // Don't set Content-Type here - let the browser set it with the boundary
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'Expires': '0'
@@ -298,15 +242,14 @@ const useStore = create(
         
         try {
           const response = await attemptUpload();
-          
           console.log('Avatar upload response status:', response.status);
           
           // Clone the response to read it multiple times if needed
           const responseClone = response.clone();
-          let data;
           
+          // Try to parse the response as JSON
+          let data;
           try {
-            // First try to parse as JSON
             data = await response.json();
           } catch (jsonError) {
             console.error('Error parsing JSON response:', jsonError);
@@ -316,6 +259,7 @@ const useStore = create(
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
           }
           
+          // Check for non-OK response
           if (!response.ok) {
             console.error('Avatar upload failed:', data);
             const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
@@ -324,22 +268,39 @@ const useStore = create(
           
           console.log('Avatar upload successful:', data);
           
-          if (!data.profilePicture) {
-            console.warn('No profile picture data in response:', data);
-            throw new Error('Invalid response from server: missing profile picture data');
+          // Update user data in the store based on the response format
+          if (data.user) {
+            // New format with complete user object
+            set({ user: { ...get().user, ...data.user } });
+          } else if (data.avatarUrl) {
+            // Legacy format with just avatar URL
+            set({ 
+              user: { 
+                ...get().user, 
+                avatar: data.avatarUrl,
+                profilePicture: { 
+                  url: data.avatarUrl,
+                  publicId: data.publicId || null,
+                  lastUpdated: new Date().toISOString()
+                } 
+              } 
+            });
+          } else if (data.profilePicture) {
+            // Format with profile picture object
+            set({ 
+              user: { 
+                ...get().user,
+                profilePicture: {
+                  ...data.profilePicture,
+                  lastUpdated: new Date().toISOString()
+                }
+              }
+            });
+          } else {
+            console.warn('Unexpected response format from server:', data);
+            throw new Error('Invalid response format from server');
           }
           
-          // Update user in store with new avatar data
-          const updatedUser = { 
-            ...get().user,
-            profilePicture: {
-              versions: data.profilePicture.versions,
-              publicId: data.profilePicture.publicId,
-              lastUpdated: new Date()
-            }
-          };
-          
-          set({ user: updatedUser });
           return data;
           
         } catch (error) {
