@@ -24,16 +24,18 @@ const useStore = create(
           throw new Error("No avatar file provided");
         }
         
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
         console.log('Uploading avatar for user:', userId);
-        console.log('API URL:', import.meta.env.VITE_API_URL);
+        console.log('API URL:', apiUrl);
         
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-            method: "PUT",
+          const response = await fetch(`${apiUrl}/api/user/upload-avatar`, {
+            method: "POST",
             headers: {
-              Authorization: `Bearer ${token}`
-              // Don't set Content-Type for FormData - browser sets it automatically with boundary
+              'Authorization': `Bearer ${token}`
+              // Let the browser set the Content-Type with the correct boundary
             },
+            credentials: 'include',
             body: formData
           });
           
@@ -45,16 +47,22 @@ const useStore = create(
             throw new Error(responseData.message || `HTTP ${response.status}`);
           }
           
-          // Update user profile with new avatar versions
-          const updatedUser = { 
-            ...get().user,
-            profilePicture: {
-              versions: responseData.profilePicture.versions,
-              publicId: responseData.profilePicture.publicId,
-              lastUpdated: new Date()
-            }
-          };
+          if (!responseData.success) {
+            throw new Error(responseData.message || 'Failed to upload avatar');
+          }
           
+          // Update user profile with new avatar
+          const updatedUser = {
+            ...(responseData.user || get().user),
+            profilePicture: responseData.user?.profilePicture || {
+              url: responseData.profilePicture?.url,
+              publicId: responseData.profilePicture?.publicId,
+              width: responseData.profilePicture?.width,
+              height: responseData.profilePicture?.height,
+              format: responseData.profilePicture?.format
+            },
+            updatedAt: new Date().toISOString()
+          };
           set({ user: updatedUser });
           return responseData;
           
