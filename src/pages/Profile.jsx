@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -72,50 +71,62 @@ const Profile = () => {
   });
 
   const handleAvatarChange = async (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    // Basic file validation
+    // Reset states
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    // File validation
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const maxSize = 5 * 1024 * 1024; // 5MB
 
     if (!validTypes.includes(file.type)) {
       setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      setLoading(false);
       return;
     }
 
     if (file.size > maxSize) {
       setError('Image size should be less than 5MB');
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
+      console.log('Preparing to upload avatar...');
       const formData = new FormData();
       formData.append('avatar', file);
-
-      // Use the updateAvatar function from the store
-      const updateAvatar = useStore.getState().updateAvatar;
-      const result = await updateAvatar(formData);
       
-      console.log("Avatar uploaded successfully:", result);
-      setSuccess('Avatar updated successfully!');
+      // Get the updateAvatar function and current user from the store
+      const { updateAvatar, user: currentUser } = useStore.getState();
+      console.log('Current user from store:', currentUser);
       
-      // Clear the file input
-      event.target.value = '';
+      // Call the updateAvatar function
+      console.log('Calling updateAvatar...');
+      const response = await updateAvatar(formData);
+      console.log('Avatar upload response:', response);
       
-      // Update the local user state with the new avatar
-      setUser({
-        ...user,
-        profilePicture: {
-          versions: result.profilePicture.versions,
-          publicId: result.profilePicture.publicId,
-          lastUpdated: new Date()
+      // If we get here, upload was successful
+      setSuccess('Profile picture updated successfully!');
+      
+      // Update the user in the store if needed
+      if (response?.user) {
+        console.log('Updating user in store with:', response.user);
+        setUser({ ...currentUser, ...response.user });
+      } else {
+        console.warn('No user data in response, forcing refresh...');
+        // If no user data in response, try to refresh the user data
+        try {
+          const userData = await userApi.getProfile();
+          console.log('Refreshed user data:', userData);
+          setUser(userData);
+        } catch (refreshError) {
+          console.error('Error refreshing user data:', refreshError);
         }
-      });
+      }
       
     } catch (err) {
       console.error('Avatar upload error:', err);
