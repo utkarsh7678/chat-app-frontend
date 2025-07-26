@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React from 'react';
 import MuiAvatar from '@mui/material/Avatar';
 import { useTheme } from '@mui/material/styles';
@@ -9,13 +8,15 @@ const DEFAULT_AVATAR = '/default-avatar.png';
 /**
  * Avatar component that supports multiple image sizes and Cloudinary responsive delivery
  * @param {Object} profilePicture - The profile picture object with versions
+ * @param {string} [src] - Direct image source URL (for backward compatibility)
  * @param {string} [alt='User Avatar'] - Alt text for the avatar
  * @param {string} [size='medium'] - Size variant: 'small' | 'medium' | 'large'
  * @param {boolean} [responsive=true] - Whether to use responsive image sizes
  * @param {Object} props - Additional props to pass to MuiAvatar
  */
 const Avatar = ({ 
-  profilePicture, 
+  profilePicture,
+  src,
   alt = 'User Avatar',
   size = 'medium',
   responsive = true,
@@ -26,6 +27,9 @@ const Avatar = ({
   
   // Determine which size to use based on props and screen size
   const getAvatarUrl = () => {
+    // If src is provided, use it directly (for backward compatibility)
+    if (src) return src;
+    
     // If no profile picture, return default
     if (!profilePicture?.versions) {
       return DEFAULT_AVATAR;
@@ -81,22 +85,3 @@ const Avatar = ({
 };
 
 export default Avatar;
-=======
-import React from 'react';
-import MuiAvatar from '@mui/material/Avatar';
-
-const DEFAULT_AVATAR = '/default-avatar.png';
-
-const Avatar = ({ src, alt, ...props }) => {
-  return (
-    <MuiAvatar
-      src={src || DEFAULT_AVATAR}
-      alt={alt || 'User Avatar'}
-      {...props}
-      onError={e => { e.target.onerror = null; e.target.src = DEFAULT_AVATAR; }}
-    />
-  );
-};
-
-export default Avatar; 
->>>>>>> dfe52c8de139b947fddccc4bf36b0d8089b36410
