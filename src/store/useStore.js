@@ -17,6 +17,24 @@ const useStore = create(
         if (!formData || !formData.has('avatar')) {
           throw new Error('Please select an image file');
         }
+        
+        if (!user?._id) {
+          console.error('No user ID found in store:', { user });
+          // Try to get the user ID from the token as a fallback
+          try {
+            const tokenData = JSON.parse(atob(token.split('.')[1]));
+            if (tokenData?.userId) {
+              console.log('Using user ID from token:', tokenData.userId);
+              // Update the user in the store with the ID from the token
+              set({ user: { ...user, _id: tokenData.userId } });
+            } else {
+              throw new Error('No user ID in token');
+            }
+          } catch (tokenError) {
+            console.error('Error extracting user ID from token:', tokenError);
+            throw new Error('User not properly authenticated. Please log in again.');
+          }
+        }
 
         try {
           // Set loading state
