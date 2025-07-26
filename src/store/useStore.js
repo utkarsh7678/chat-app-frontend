@@ -206,15 +206,45 @@ const useStore = create(
         console.log('Uploading avatar for user:', userId);
         console.log('API URL:', import.meta.env.VITE_API_URL);
         
+        // Function to attempt the upload with retries
+        const attemptUpload = async (attempt = 1, maxAttempts = 3) => {
+          try {
+            console.log(`Upload attempt ${attempt} of ${maxAttempts}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                // Add cache control headers to prevent caching
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              },
+              body: formData,
+              signal: controller.signal,
+              // Force HTTP/1.1 to avoid QUIC protocol issues
+              credentials: 'include',
+              mode: 'cors'
+            });
+            
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            console.error(`Upload attempt ${attempt} failed:`, error);
+            if (attempt >= maxAttempts) throw error;
+            
+            // Wait before retrying (exponential backoff)
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return attemptUpload(attempt + 1, maxAttempts);
+          }
+        };
+        
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`
-              // Don't set Content-Type for FormData - browser sets it automatically with boundary
-            },
-            body: formData
-          });
+          const response = await attemptUpload();
           
           console.log('Avatar upload response status:', response.status);
           
