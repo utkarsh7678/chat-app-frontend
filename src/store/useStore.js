@@ -1,370 +1,168 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { shallow } from 'zustand/shallow';
+const cloudinary = require('cloudinary').v2;
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
-const useStore = create(
-  persist(
-    (set, get) => ({
-      // Avatar upload function with improved error handling
-      updateAvatar: async (formData) => {
-        const token = get().token;
-        const user = get().user;
-        
-        if (!token) {
-          throw new Error('Please log in to upload an avatar');
-        }
-        
-        if (!formData || !formData.has('avatar')) {
-          throw new Error('Please select an image file');
-        }
+// Configure Cloudinary
+console.log('=== CLOUDINARY CONFIGURATION ===');
 
-        try {
-          // Set loading state
-          set({ isLoading: true, error: null });
-          
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com'}/api/user/upload-avatar`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              // Let the browser set the Content-Type with boundary
-            },
-            body: formData,
-            credentials: 'include' // Important for cookies/sessions
-          });
+// Check if Cloudinary is properly configured
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && 
+                             process.env.CLOUDINARY_API_KEY && 
+                             process.env.CLOUDINARY_API_SECRET;
 
-          const data = await response.json().catch(() => ({
-            message: 'Invalid server response',
-          }));
+console.log('Cloudinary Status:', isCloudinaryConfigured ? 'Configured' : 'Not Configured');
+console.log('Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME || 'Not set');
+console.log('API Key:', process.env.CLOUDINARY_API_KEY ? '*** Set ***' : 'Missing!');
+console.log('API Secret:', process.env.CLOUDINARY_API_SECRET ? '*** Set ***' : 'Missing!');
 
-          if (!response.ok) {
-            throw new Error(data.message || `Server error: ${response.status}`);
-          }
+// Initialize Cloudinary only if all required variables are present
+if (isCloudinaryConfigured) {
+  console.log('Initializing Cloudinary with secure connection...');
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true
+  });
+}
 
-          // Update user data with the new avatar
-          if (data.user) {
-            set({ 
-              user: { ...user, ...data.user },
-              isLoading: false 
-            });
-          } else if (data.avatarUrl) {
-            // Handle case where backend returns just the avatar URL
-            const updatedUser = { 
-              ...user, 
-              avatar: data.avatarUrl,
-              profilePicture: { url: data.avatarUrl }
-            };
-            set({ user: updatedUser, isLoading: false });
-          } else {
-            throw new Error('Invalid response from server');
-          }
+console.log('✅ Cloudinary configured successfully');
 
-          return data;
-        } catch (error) {
-          console.error('Avatar upload failed:', error);
-          set({ 
-            error: error.message || 'Failed to upload avatar',
-            isLoading: false 
-          });
-          throw error;
-        }
-      },
-
-      // Auth state
-      user: null,
-      token: null,
-      isAuthenticated: false,
-
-      // Chat state
-      activeChat: null,
-      activeGroup: null,
-      messages: [],
-      onlineUsers: [],
-      typingUsers: [],
-
-      // User data
-      friends: [],
-      groups: [],
-      friendRequests: [],
-
-      // UI state
-      theme: 'light',
-      sidebarOpen: true,
-      notifications: [],
-
-      // Actions
-      setUser: (user) => {
-        console.log('setUser called with:', user);
-        // Ensure user has required fields
-        const validUser = user && typeof user === 'object' && (user._id || user.email);
-        set({ user: validUser ? user : null, isAuthenticated: !!validUser });
-      },
-      setToken: (token) => {
-        console.log('setToken called with:', token);
-        set({ token });
-      },
-      logout: () => {
-        console.log('Logout called');
-        set({ 
-          user: null, 
-          token: null, 
-          isAuthenticated: false,
-          friends: [],
-          groups: [],
-          friendRequests: [],
-          messages: [],
-          onlineUsers: [],
-          typingUsers: []
-        });
-      },
-
-      setActiveChat: (chat) => set({ activeChat: chat }),
-      setActiveGroup: (group) => set({ activeGroup: group }),
-      addMessage: (message) => set((state) => ({
-        messages: [...state.messages, message]
-      })),
-      setMessages: (messages) => set({ messages }),
-      clearMessages: () => set({ messages: [] }),
-
-      // Friends and groups management
-      setFriends: (friends) => set({ friends }),
-      addFriend: (friend) => set((state) => ({
-        friends: [...state.friends, friend]
-      })),
-      removeFriend: (friendId) => set((state) => ({
-        friends: state.friends.filter(f => f._id !== friendId)
-      })),
-
-      setGroups: (groups) => set({ groups }),
-      addGroup: (group) => set((state) => ({
-        groups: [...state.groups, group]
-      })),
-      removeGroup: (groupId) => set((state) => ({
-        groups: state.groups.filter(g => g._id !== groupId)
-      })),
-
-      setFriendRequests: (requests) => set({ friendRequests: requests }),
-      addFriendRequest: (request) => set((state) => ({
-        friendRequests: [...state.friendRequests, request]
-      })),
-      updateFriendRequest: (requestId, updates) => set((state) => ({
-        friendRequests: state.friendRequests.map(r => 
-          r._id === requestId ? { ...r, ...updates } : r
-        )
-      })),
-      removeFriendRequest: (requestId) => set((state) => ({
-        friendRequests: state.friendRequests.filter(r => r._id !== requestId)
-      })),
-
-      addOnlineUser: (userId) => set((state) => ({
-        onlineUsers: [...new Set([...state.onlineUsers, userId])]
-      })),
-      removeOnlineUser: (userId) => set((state) => ({
-        onlineUsers: state.onlineUsers.filter(id => id !== userId)
-      })),
-      setOnlineUsers: (users) => set({ onlineUsers: users }),
-
-      addTypingUser: (userId) => set((state) => ({
-        typingUsers: [...new Set([...state.typingUsers, userId])]
-      })),
-      removeTypingUser: (userId) => set((state) => ({
-        typingUsers: state.typingUsers.filter(id => id !== userId)
-      })),
-
-      toggleTheme: () => set((state) => ({
-        theme: state.theme === 'light' ? 'dark' : 'light'
-      })),
-      toggleSidebar: () => set((state) => ({
-        sidebarOpen: !state.sidebarOpen
-      })),
-      addNotification: (notification) => set((state) => ({
-        notifications: [...state.notifications, notification]
-      })),
-      removeNotification: (id) => set((state) => ({
-        notifications: state.notifications.filter(n => n.id !== id)
-      })),
-      clearNotifications: () => set({ notifications: [] }),
-
-      // Avatar upload function
-      updateAvatar: async (formData) => {
-        const token = get().token;
-        const userId = get().user?._id;
-        
-        // Validation checks
-        if (!token) {
-          throw new Error("No authentication token found. Please log in again.");
-        }
-        
-        if (!userId) {
-          throw new Error("User ID not found. Please refresh the page and try again.");
-        }
-        
-        if (!formData || !formData.has('avatar')) {
-          throw new Error("Please select an image file to upload.");
-        }
-        
-        console.log('Uploading avatar for user:', userId);
-        console.log('API URL:', import.meta.env.VITE_API_URL);
-        
-        // Function to attempt the upload with retries
-        const attemptUpload = async (attempt = 1, maxAttempts = 3) => {
-          try {
-            console.log(`Upload attempt ${attempt} of ${maxAttempts}`);
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/upload-avatar`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              },
-              body: formData,
-              signal: controller.signal,
-              credentials: 'include',
-              mode: 'cors'
-            });
-            
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error) {
-            console.error(`Upload attempt ${attempt} failed:`, error);
-            if (attempt >= maxAttempts) throw error;
-            
-            // Wait before retrying (exponential backoff)
-            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-            console.log(`Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return attemptUpload(attempt + 1, maxAttempts);
-          }
-        };
-        
-        try {
-          const response = await attemptUpload();
-          console.log('Avatar upload response status:', response.status);
-          
-          // Clone the response to read it multiple times if needed
-          const responseClone = response.clone();
-          
-          // Try to parse the response as JSON
-          let data;
-          try {
-            data = await response.json();
-          } catch (jsonError) {
-            console.error('Error parsing JSON response:', jsonError);
-            // If JSON parsing fails, try to get the response as text
-            const errorText = await responseClone.text();
-            console.error('Response text:', errorText);
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-          }
-          
-          // Check for non-OK response
-          if (!response.ok) {
-            console.error('Avatar upload failed:', data);
-            const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
-            throw new Error(errorMessage);
-          }
-          
-          console.log('Avatar upload successful:', data);
-          
-          // Update user data in the store based on the response format
-          if (data.user) {
-            // New format with complete user object
-            set({ user: { ...get().user, ...data.user } });
-          } else if (data.avatarUrl) {
-            // Legacy format with just avatar URL
-            set({ 
-              user: { 
-                ...get().user, 
-                avatar: data.avatarUrl,
-                profilePicture: { 
-                  url: data.avatarUrl,
-                  publicId: data.publicId || null,
-                  lastUpdated: new Date().toISOString()
-                } 
-              } 
-            });
-          } else if (data.profilePicture) {
-            // Format with profile picture object
-            set({ 
-              user: { 
-                ...get().user,
-                profilePicture: {
-                  ...data.profilePicture,
-                  lastUpdated: new Date().toISOString()
-                }
-              }
-            });
-          } else {
-            console.warn('Unexpected response format from server:', data);
-            throw new Error('Invalid response format from server');
-          }
-          
-          return data;
-          
-        } catch (error) {
-          console.error("Avatar upload error:", error);
-          
-          // Enhance error messages for better user feedback
-          if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
-          }
-          
-          // Re-throw the error with a user-friendly message
-          if (error.message.includes('Failed to fetch') || 
-              error.message.includes('NetworkError')) {
-            throw new Error('Network error: Unable to connect to the server. Please try again later.');
-          }
-          
-          // If the error is already user-friendly, re-throw it as is
-          throw error;
-        }
-      }
-    }),
-    {
-      name: 'chat-app-storage',
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        theme: state.theme
-      })
+// Upload avatar with multiple sizes
+const uploadAvatar = async (file, userId) => {
+  try {
+    console.log('=== CLOUDINARY UPLOAD STARTED ===');
+    console.log('File info:', {
+      hasFile: !!file,
+      hasBuffer: file?.buffer ? true : false,
+      bufferSize: file?.buffer?.length || 0,
+      mimeType: file?.mimetype,
+      originalName: file?.originalname,
+      userId: userId
+    });
+    
+    if (!file || !file.buffer) {
+      const error = new Error('No file buffer provided');
+      console.error('Upload error - No buffer:', { file, userId });
+      throw error;
     }
-  )
-);
 
-// Custom hooks for optimized selectors
-export const useAuth = () => useStore(
-  (state) => ({
-    user: state.user,
-    token: state.token,
-    isAuthenticated: state.isAuthenticated,
-    setUser: state.setUser,
-    setToken: state.setToken,
-    logout: state.logout
-  }),
-  shallow
-);
+    // Generate unique public ID with user ID and timestamp
+    const publicId = `chat-app/avatars/${userId}_${Date.now()}`;
+    
+    // Convert buffer to data URL
+    let dataUri;
+    try {
+      dataUri = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      console.log('Data URI created, length:', dataUri.length);
+    } catch (error) {
+      console.error('Error creating data URI:', error);
+      throw new Error('Failed to process image file');
+    }
+    
+    // Upload to Cloudinary
+    console.log('Starting Cloudinary upload...');
+    let result;
+    try {
+      // First upload the original image
+      result = await cloudinary.uploader.upload(dataUri, {
+        public_id: publicId,
+        resource_type: 'auto',
+        overwrite: true,
+        invalidate: true,
+      folder: 'chat-app/avatars',
+      resource_type: 'auto',
+      transformation: [
+        { width: 512, height: 512, crop: 'fill', gravity: 'face' },
+        { quality: 'auto', fetch_format: 'auto' }
+      ]
+      });
+      console.log('Cloudinary upload result:', {
+        success: !!result,
+        url: result?.secure_url ? 'URL present' : 'No URL',
+        publicId: result?.public_id || 'No public ID',
+        format: result?.format,
+        bytes: result?.bytes,
+        width: result?.width,
+        height: result?.height
+      });
+    } catch (uploadError) {
+      console.error('Cloudinary upload error:', {
+        name: uploadError.name,
+        message: uploadError.message,
+        http_code: uploadError.http_code,
+        code: uploadError.code,
+        stack: uploadError.stack
+      });
+      throw new Error(`Cloudinary upload failed: ${uploadError.message}`);
+    }
 
-export const useTheme = () => useStore(
-  (state) => ({
-    theme: state.theme,
-    toggleTheme: state.toggleTheme
-  }),
-  shallow
-);
+    if (!result || !result.secure_url) {
+      const error = new Error('Failed to upload image to Cloudinary - No secure URL in response');
+      console.error('Upload failed - No secure URL:', result);
+      throw error;
+    }
 
-export const useUI = () => useStore(
-  (state) => ({
-    sidebarOpen: state.sidebarOpen,
-    toggleSidebar: state.toggleSidebar,
-    notifications: state.notifications,
-    addNotification: state.addNotification,
-    removeNotification: state.removeNotification,
-    clearNotifications: state.clearNotifications
-  }),
-  shallow
-);
+    // Generate different sizes
+    const avatarVersions = {
+      original: result.secure_url,
+      large: cloudinary.url(publicId, {
+        width: 200,
+        height: 200,
+        crop: 'fill',
+        gravity: 'face',
+        secure: true
+      }),
+      medium: cloudinary.url(publicId, {
+        width: 100,
+        height: 100,
+        crop: 'fill',
+        gravity: 'face',
+        secure: true
+      }),
+      small: cloudinary.url(publicId, {
+        width: 50,
+        height: 50,
+        crop: 'fill',
+        gravity: 'face',
+        secure: true
+      })
+    };
 
-export default useStore; 
+    return {
+      success: true,
+      versions: avatarVersions,
+      publicId: publicId
+    };
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+// Delete old avatar from Cloudinary
+const deleteAvatar = async (publicId) => {
+  try {
+    if (!publicId) return { success: true };
+    
+    // Delete all versions of the image
+    const result = await cloudinary.uploader.destroy(publicId, {
+      invalidate: true,
+      resource_type: 'image'
+    });
+    
+    return { success: result.result === 'ok' };
+  } catch (error) {
+    console.error('Error deleting avatar from Cloudinary:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+module.exports = {
+  uploadAvatar,
+  deleteAvatar
+};
 
