@@ -221,18 +221,17 @@ const useStore = create(
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-              method: 'PUT',
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/upload-avatar`, {
+              method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
-                // Add cache control headers to prevent caching
+                // Don't set Content-Type here - let the browser set it with the boundary
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
                 'Expires': '0'
               },
               body: formData,
               signal: controller.signal,
-              // Force HTTP/1.1 to avoid QUIC protocol issues
               credentials: 'include',
               mode: 'cors'
             });
@@ -361,4 +360,3 @@ export const useUI = () => useStore(
 );
 
 export default useStore; 
-
