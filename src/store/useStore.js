@@ -211,31 +211,34 @@ const useStore = create(
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`
-              // Note: Don't set Content-Type header when using FormData
-              // The browser will set it automatically with the correct boundary
+              // Don't set Content-Type for FormData - browser sets it automatically with boundary
             },
             body: formData
           });
           
           console.log('Avatar upload response status:', response.status);
           
+          // Clone the response to read it multiple times if needed
+          const responseClone = response.clone();
+          let data;
+          
+          try {
+            // First try to parse as JSON
+            data = await response.json();
+          } catch (jsonError) {
+            console.error('Error parsing JSON response:', jsonError);
+            // If JSON parsing fails, try to get the response as text
+            const errorText = await responseClone.text();
+            console.error('Response text:', errorText);
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+          }
+          
           if (!response.ok) {
-            let errorMessage = 'Failed to upload avatar';
-            try {
-              const errorData = await response.json();
-              errorMessage = errorData.message || errorMessage;
-              if (errorData.error) {
-                console.error('Server error details:', errorData.error);
-              }
-            } catch (e) {
-              const errorText = await response.text();
-              console.error('Error parsing error response:', errorText);
-              errorMessage = `Server returned ${response.status}: ${response.statusText}`;
-            }
+            console.error('Avatar upload failed:', data);
+            const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
             throw new Error(errorMessage);
           }
           
-          const data = await response.json();
           console.log('Avatar upload successful:', data);
           
           if (!data.profilePicture) {
@@ -264,13 +267,14 @@ const useStore = create(
             throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
           }
           
-          // Re-throw the error with a user-friendly message if it's not already user-friendly
+          // Re-throw the error with a user-friendly message
           if (error.message.includes('Failed to fetch') || 
               error.message.includes('NetworkError')) {
             throw new Error('Network error: Unable to connect to the server. Please try again later.');
           }
           
-          throw error; // Re-throw the original error if we don't have a specific handler for it
+          // If the error is already user-friendly, re-throw it as is
+          throw error;
         }
       }
     }),
