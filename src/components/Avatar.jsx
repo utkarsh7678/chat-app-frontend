@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import MuiAvatar from '@mui/material/Avatar';
 import { useTheme } from '@mui/material/styles';
@@ -80,3 +81,22 @@ const Avatar = ({
 };
 
 export default Avatar;
+=======
+import React from 'react';
+import MuiAvatar from '@mui/material/Avatar';
+
+const DEFAULT_AVATAR = '/default-avatar.png';
+
+const Avatar = ({ src, alt, ...props }) => {
+  return (
+    <MuiAvatar
+      src={src || DEFAULT_AVATAR}
+      alt={alt || 'User Avatar'}
+      {...props}
+      onError={e => { e.target.onerror = null; e.target.src = DEFAULT_AVATAR; }}
+    />
+  );
+};
+
+export default Avatar; 
+>>>>>>> dfe52c8de139b947fddccc4bf36b0d8089b36410

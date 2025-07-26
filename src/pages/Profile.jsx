@@ -36,6 +36,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
 
   // Debug logging for avatar
+<<<<<<< HEAD
   useEffect(() => {
     console.log('🔍 Profile Debug:');
     console.log('User:', user);
@@ -44,6 +45,16 @@ const Profile = () => {
     console.log('Avatar Versions:', user?.profilePicture?.versions);
     console.log('API URL:', import.meta.env.VITE_API_URL);
   }, [user]);
+=======
+  console.log('🔍 Profile Debug:');
+  console.log('User:', user);
+  console.log('Has profilePicture:', !!user?.profilePicture);
+  console.log('Avatar URL:', user?.profilePicture?.url);
+  console.log('API URL:', import.meta.env.VITE_API_URL);
+  if (user?.profilePicture?.url) {
+    console.log('Full Avatar URL:', `${import.meta.env.VITE_API_URL}${user.profilePicture.url}`);
+  }
+>>>>>>> dfe52c8de139b947fddccc4bf36b0d8089b36410
 
   const formik = useFormik({
     initialValues: {
@@ -157,6 +168,7 @@ const Profile = () => {
             width: '100%',
           }}
         >
+<<<<<<< HEAD
           <Box sx={{ position: 'relative', mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Avatar 
               profilePicture={user?.profilePicture}
@@ -170,6 +182,13 @@ const Profile = () => {
                 borderColor: 'primary.main',
                 boxShadow: 3
               }}
+=======
+          <Box sx={{ position: 'relative', mb: 3 }}>
+            <Avatar
+              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
+              alt={user?.username}
+              sx={{ width: 100, height: 100 }}
+>>>>>>> dfe52c8de139b947fddccc4bf36b0d8089b36410
             />
             <input
               accept="image/jpeg, image/png, image/gif, image/webp"
