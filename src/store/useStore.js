@@ -5,73 +5,119 @@ import { shallow } from 'zustand/shallow';
 const useStore = create(
   persist(
     (set, get) => ({
-
-      // Avatar upload function with Cloudinary integration
+      // Avatar upload function with Cloudinary integration and retry logic
       updateAvatar: async (formData) => {
         const token = get().token;
         const userId = get().user?._id;
         
-        // Validation checks
         if (!token) {
-          throw new Error("No authentication token found");
+          throw new Error("No authentication token found. Please log in again.");
         }
         
         if (!userId) {
-          throw new Error("User ID not found");
+          throw new Error("User ID not found. Please refresh the page and try again.");
         }
         
         if (!formData || !formData.has('avatar')) {
-          throw new Error("No avatar file provided");
+          throw new Error("Please select an image file to upload.");
         }
         
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        console.log('Uploading avatar for user:', userId);
-        console.log('API URL:', apiUrl);
+        const apiUrl = import.meta.env.VITE_API_URL ;
+        const endpoint = `${apiUrl}/api/user/upload-avatar`;
+        
+        console.log('Starting avatar upload for user:', userId);
+        
+        // Function to attempt the upload with retries
+        const attemptUpload = async (attempt = 1, maxAttempts = 3) => {
+          try {
+            console.log(`Upload attempt ${attempt} of ${maxAttempts}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              },
+              body: formData,
+              signal: controller.signal,
+              credentials: 'include',
+              mode: 'cors'
+            });
+            
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            console.error(`Upload attempt ${attempt} failed:`, error);
+            if (attempt >= maxAttempts) throw error;
+            
+            // Wait before retrying (exponential backoff)
+            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return attemptUpload(attempt + 1, maxAttempts);
+          }
+        };
         
         try {
-          const response = await fetch(`${apiUrl}/api/user/upload-avatar`, {
-            method: "POST",
-            headers: {
-              'Authorization': `Bearer ${token}`
-              // Let the browser set the Content-Type with the correct boundary
-            },
-            credentials: 'include',
-            body: formData
-          });
+          const response = await attemptUpload();
+          console.log('Avatar upload response status:', response.status);
           
-          console.log('Response status:', response.status);
-          const responseData = await response.json();
-          console.log('Response data:', responseData);
+          // Clone the response to read it multiple times if needed
+          const responseClone = response.clone();
+          let data;
+          
+          try {
+            // First try to parse as JSON
+            data = await response.json();
+          } catch (jsonError) {
+            console.error('Error parsing JSON response:', jsonError);
+            // If JSON parsing fails, try to get the response as text
+            const errorText = await responseClone.text();
+            console.error('Response text:', errorText);
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+          }
           
           if (!response.ok) {
-            throw new Error(responseData.message || `HTTP ${response.status}`);
+            console.error('Avatar upload failed:', data);
+            const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
+            throw new Error(errorMessage);
           }
           
-          if (!responseData.success) {
-            throw new Error(responseData.message || 'Failed to upload avatar');
+          console.log('Avatar upload successful:', data);
+          
+          if (!data.profilePicture) {
+            console.warn('No profile picture data in response:', data);
+            throw new Error('Invalid response from server: missing profile picture data');
           }
           
-          // Update user profile with new avatar
-          const updatedUser = {
-            ...(responseData.user || get().user),
-            profilePicture: responseData.user?.profilePicture || {
-              url: responseData.profilePicture?.url,
-              publicId: responseData.profilePicture?.publicId,
-              width: responseData.profilePicture?.width,
-              height: responseData.profilePicture?.height,
-              format: responseData.profilePicture?.format
-            },
-            updatedAt: new Date().toISOString()
+          // Update user in store with new avatar data
+          const updatedUser = { 
+            ...get().user,
+            profilePicture: {
+              versions: data.profilePicture.versions,
+              publicId: data.profilePicture.publicId,
+              lastUpdated: new Date()
+            }
           };
+          
           set({ user: updatedUser });
-          return responseData;
+          return data;
           
         } catch (error) {
-          console.error("updateAvatar error:", error);
+          console.error("Avatar upload error:", error);
           
-          // Re-throw with more context if it's a network error
+          // Enhance error messages for better user feedback
           if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to server');
+            throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
+          }
+          
+          if (error.name === 'AbortError') {
+            throw new Error('Upload timed out. Please try again.');
           }
           
           throw error;
@@ -360,3 +406,4 @@ export const useUI = () => useStore(
 );
 
 export default useStore; 
+
