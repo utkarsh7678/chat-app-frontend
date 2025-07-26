@@ -124,7 +124,7 @@ const Header = () => {
           >
             <Avatar
               alt={user?.username}
-              src={user?.avatar}
+              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
               sx={{ width: 32, height: 32 }}
             />
           </IconButton>
@@ -142,7 +142,7 @@ const Header = () => {
           <MenuItem onClick={handleProfileClick}>
             <Avatar
               alt={user?.username}
-              src={user?.avatar}
+              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
               sx={{ width: 24, height: 24, mr: 1 }}
             />
             Profile

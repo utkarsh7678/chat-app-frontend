@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -35,6 +35,16 @@ const Profile = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Debug logging for avatar
+  useEffect(() => {
+    console.log('🔍 Profile Debug:');
+    console.log('User:', user);
+    console.log('Profile Picture Data:', user?.profilePicture);
+    console.log('Has profilePicture:', !!user?.profilePicture?.versions);
+    console.log('Avatar Versions:', user?.profilePicture?.versions);
+    console.log('API URL:', import.meta.env.VITE_API_URL);
+  }, [user]);
+
   const formik = useFormik({
     initialValues: {
       username: user?.username || '',
@@ -59,17 +69,17 @@ const Profile = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validate file type and size
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    // Basic file validation
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const maxSize = 5 * 1024 * 1024; // 5MB
 
-    if (!allowedTypes.includes(file.type)) {
-      setError('Please select a valid image file (JPEG, PNG, or GIF)');
+    if (!validTypes.includes(file.type)) {
+      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
       return;
     }
 
     if (file.size > maxSize) {
-      setError('File size must be less than 5MB');
+      setError('Image size should be less than 5MB');
       return;
     }
 
@@ -80,13 +90,8 @@ const Profile = () => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      
-      console.log('File details:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
-      
+
+      // Use the updateAvatar function from the store
       const updateAvatar = useStore.getState().updateAvatar;
       const result = await updateAvatar(formData);
       
@@ -95,6 +100,16 @@ const Profile = () => {
       
       // Clear the file input
       event.target.value = '';
+      
+      // Update the local user state with the new avatar
+      setUser({
+        ...user,
+        profilePicture: {
+          versions: result.profilePicture.versions,
+          publicId: result.profilePicture.publicId,
+          lastUpdated: new Date()
+        }
+      });
       
     } catch (err) {
       console.error('Avatar upload error:', err);
@@ -109,9 +124,9 @@ const Profile = () => {
       } else if (err.message.includes('No avatar file')) {
         errorMessage = 'Please select a file to upload.';
       } else if (err.message.includes('HTTP 413')) {
-        errorMessage = 'File is too large. Please select a smaller image.';
+        errorMessage = 'File is too large. Please select a smaller image (max 5MB).';
       } else if (err.message.includes('HTTP 415')) {
-        errorMessage = 'Unsupported file type. Please select a JPEG, PNG, or GIF image.';
+        errorMessage = 'Unsupported file type. Please select a JPEG, PNG, GIF, or WebP image.';
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -142,33 +157,57 @@ const Profile = () => {
             width: '100%',
           }}
         >
-          <Box sx={{ position: 'relative', mb: 3 }}>
-            <Avatar
-              src={user?.avatar}
-              alt={user?.username}
-              sx={{ width: 100, height: 100 }}
+          <Box sx={{ position: 'relative', mb: 3, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Avatar 
+              profilePicture={user?.profilePicture}
+              alt={user?.username || 'User Avatar'}
+              size="large"
+              sx={{ 
+                width: 120, 
+                height: 120,
+                mb: 2,
+                border: '2px solid',
+                borderColor: 'primary.main',
+                boxShadow: 3
+              }}
             />
             <input
-              accept="image/*"
+              accept="image/jpeg, image/png, image/gif, image/webp"
               style={{ display: 'none' }}
               id="avatar-upload"
               type="file"
               onChange={handleAvatarChange}
+              disabled={loading}
             />
             <label htmlFor="avatar-upload">
-              <IconButton
+              <Button
+                variant="outlined"
                 color="primary"
                 component="span"
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  backgroundColor: 'background.paper',
-                }}
+                startIcon={<PhotoCamera />}
+                disabled={loading}
+                sx={{ mt: 1 }}
               >
-                <PhotoCamera />
-              </IconButton>
+                {loading ? 'Uploading...' : 'Change Avatar'}
+              </Button>
             </label>
+            
+            {/* Show file requirements */}
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+              JPG, PNG, GIF, or WebP. Max 5MB.
+            </Typography>
+            
+            {/* Error and success messages */}
+            {error && (
+              <Typography color="error" variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                {error}
+              </Typography>
+            )}
+            {success && (
+              <Typography color="success.main" variant="body2" sx={{ mt: 1, textAlign: 'center' }}>
+                {success}
+              </Typography>
+            )}
           </Box>
 
           <Typography component="h1" variant="h5">

@@ -92,8 +92,14 @@ const App = () => {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (parsedUser && (parsedUser._id || parsedUser.email)) {
-          console.log('Setting user from localStorage');
+          console.log('Setting user from localStorage:', parsedUser);
           setUser(parsedUser);
+          
+          // If user doesn't have profilePicture or it's outdated, fetch fresh profile
+          if (!parsedUser.profilePicture || !parsedUser.profilePicture.url) {
+            console.log('User missing profilePicture, fetching fresh profile data');
+            fetchUserProfile(token);
+          }
         } else {
           console.log('Invalid user data, logging out');
           logout();
@@ -107,6 +113,31 @@ const App = () => {
       logout();
     }
   }, []); // Empty dependency array to run only once
+
+  // Function to fetch fresh user profile data
+  const fetchUserProfile = async (token) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Fresh profile data fetched:', data);
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+      } else {
+        console.error('Failed to fetch profile:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   return (
     <AppErrorBoundary>
