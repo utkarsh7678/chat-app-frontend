@@ -192,15 +192,15 @@ const useStore = create(
         
         // Validation checks
         if (!token) {
-          throw new Error("No authentication token found");
+          throw new Error("No authentication token found. Please log in again.");
         }
         
         if (!userId) {
-          throw new Error("User ID not found");
+          throw new Error("User ID not found. Please refresh the page and try again.");
         }
         
         if (!formData || !formData.has('avatar')) {
-          throw new Error("No avatar file provided");
+          throw new Error("Please select an image file to upload.");
         }
         
         console.log('Uploading avatar for user:', userId);
@@ -208,9 +208,11 @@ const useStore = create(
         
         try {
           const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/avatar`, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-              "Authorization": `Bearer ${token}`
+              'Authorization': `Bearer ${token}`
+              // Note: Don't set Content-Type header when using FormData
+              // The browser will set it automatically with the correct boundary
             },
             body: formData
           });
@@ -218,20 +220,35 @@ const useStore = create(
           console.log('Avatar upload response status:', response.status);
           
           if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Avatar upload failed:', response.status, errorText);
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            let errorMessage = 'Failed to upload avatar';
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorMessage;
+              if (errorData.error) {
+                console.error('Server error details:', errorData.error);
+              }
+            } catch (e) {
+              const errorText = await response.text();
+              console.error('Error parsing error response:', errorText);
+              errorMessage = `Server returned ${response.status}: ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
           }
           
           const data = await response.json();
           console.log('Avatar upload successful:', data);
           
-          // Update user in store with new avatar
+          if (!data.profilePicture) {
+            console.warn('No profile picture data in response:', data);
+            throw new Error('Invalid response from server: missing profile picture data');
+          }
+          
+          // Update user in store with new avatar data
           const updatedUser = { 
-            ...get().user, 
+            ...get().user,
             profilePicture: {
-              url: data.path || data.url,
-              key: data.key || (data.path ? data.path.split('/').pop() : null),
+              versions: data.profilePicture.versions,
+              publicId: data.profilePicture.publicId,
               lastUpdated: new Date()
             }
           };
@@ -240,14 +257,20 @@ const useStore = create(
           return data;
           
         } catch (error) {
-          console.error("updateAvatar error:", error);
+          console.error("Avatar upload error:", error);
           
-          // Re-throw with more context if it's a network error
+          // Enhance error messages for better user feedback
           if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to server');
+            throw new Error('Network error: Unable to connect to the server. Please check your connection and try again.');
           }
           
-          throw error;
+          // Re-throw the error with a user-friendly message if it's not already user-friendly
+          if (error.message.includes('Failed to fetch') || 
+              error.message.includes('NetworkError')) {
+            throw new Error('Network error: Unable to connect to the server. Please try again later.');
+          }
+          
+          throw error; // Re-throw the original error if we don't have a specific handler for it
         }
       }
     }),
