@@ -127,18 +127,45 @@ export const notifications = {
 };
 
 export const uploadAvatar = async (file, token) => {
-  const formData = new FormData();
-  formData.append('avatar', file);
-  return axios.put(
-    'https://realtime-chat-api-z27k.onrender.com/api/user/avatar',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  try {
+    console.log('Preparing to upload avatar...', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      hasToken: !!token
+    });
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    const response = await axios.post(
+      'https://realtime-chat-api-z27k.onrender.com/api/user/upload-avatar',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 30000 // 30 seconds timeout
+      }
+    );
+
+    console.log('Avatar upload successful:', response.data);
+    return response;
+  } catch (error) {
+    console.error('Avatar upload failed:', {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers
+      }
+    });
+    throw error;
+  }
 };
 
 export default {
