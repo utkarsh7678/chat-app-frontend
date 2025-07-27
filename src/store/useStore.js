@@ -42,6 +42,13 @@ const useStore = create(
           
           const userId = get().user?._id;
           if (!userId) throw new Error('User ID not found');
+          
+          // Ensure formData has the correct field name 'profilePic'
+          const uploadFormData = new FormData();
+          const file = formData.get('avatar');
+          if (!file) throw new Error('No file found in form data');
+          uploadFormData.append('profilePic', file);
+          
           const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
           const uploadUrl = `${baseUrl}/api/user/profile-picture/${userId}`;
           console.log('Uploading to URL:', uploadUrl);
@@ -50,8 +57,9 @@ const useStore = create(
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
+              // Don't set Content-Type header - let the browser set it with the correct boundary
             },
-            body: formData,
+            body: uploadFormData,
             credentials: 'include' // Important for cookies/sessions
           });
 
