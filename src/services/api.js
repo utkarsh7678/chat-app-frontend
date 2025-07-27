@@ -126,25 +126,29 @@ export const notifications = {
   deleteAllNotifications: () => api.delete('/notifications')
 };
 
-export const uploadAvatar = async (file, token) => {
+export const uploadAvatar = async (file, token, userId) => {
   try {
+    if (!userId) throw new Error('User ID is required');
+    
     console.log('Preparing to upload avatar...', {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
-      hasToken: !!token
+      hasToken: !!token,
+      userId: userId
     });
 
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('profilePic', file); // Must match backend's multer field name
     
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
     const response = await axios.post(
-      'https://realtime-chat-api-z27k.onrender.com/api/user/upload-avatar',
+      `${baseUrl}/api/user/profile-picture/${userId}`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type - let the browser set it with the boundary
+          'Authorization': `Bearer ${token}`,
         },
         timeout: 30000 // 30 seconds timeout
       }
@@ -175,3 +179,4 @@ export default {
   groups,
   notifications
 }; 
+
