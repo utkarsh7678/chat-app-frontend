@@ -40,7 +40,10 @@ const useStore = create(
           // Set loading state
           set({ isLoading: true, error: null });
           
-          const uploadUrl = `${import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com'}/api/user/upload-avatar`;
+          const userId = get().user?._id;
+          if (!userId) throw new Error('User ID not found');
+          const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
+          const uploadUrl = `${baseUrl}/api/user/profile-picture/${userId}`;
           console.log('Uploading to URL:', uploadUrl);
           
           const response = await fetch(uploadUrl, {
