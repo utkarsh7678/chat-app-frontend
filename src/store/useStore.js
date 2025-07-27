@@ -313,60 +313,69 @@ const useStore = create(
           // Update user data in the store based on the response format
           console.log('Processing avatar upload response:', data);
           
-          if (data.user) {
-            // New format with complete user object
-            console.log('Using user object from response');
-            set({ 
-              user: { 
-                ...get().user, 
-                ...data.user,
-                // Ensure profilePicture has all required fields
+          // Handle the response format from our updated backend
+          if (data.success && data.profilePicture) {
+            console.log('Using profile picture object from response');
+            set({
+              user: {
+                ...get().user,
                 profilePicture: {
-                  ...(data.user.profilePicture || {}),
-                  versions: data.user.profilePicture?.versions || {
-                    original: data.user.avatar || '',
-                    large: data.user.avatar || '',
-                    medium: data.user.avatar || '',
-                    small: data.user.avatar || ''
-                  },
-                  publicId: data.user.profilePicture?.publicId || null,
-                  lastUpdated: data.user.profilePicture?.lastUpdated || new Date().toISOString()
+                  url: data.profilePicture.url,
+                  key: data.profilePicture.key,
+                  lastUpdated: data.profilePicture.lastUpdated || new Date().toISOString(),
+                  versions: data.profilePicture.versions || {
+                    original: data.profilePicture.url,
+                    large: data.profilePicture.url,
+                    medium: data.profilePicture.url,
+                    small: data.profilePicture.url
+                  }
                 }
-              } 
+              }
             });
-          } else if (data.avatarUrl || data.publicId) {
-            // Legacy format with just avatar URL
+          } 
+          // Fallback to other possible response formats
+          else if (data.user?.profilePicture) {
+            console.log('Using user object with profile picture from response');
+            set({
+              user: {
+                ...get().user,
+                ...data.user,
+                profilePicture: {
+                  ...data.user.profilePicture,
+                  versions: data.user.profilePicture.versions || {
+                    original: data.user.profilePicture.url || '',
+                    large: data.user.profilePicture.url || '',
+                    medium: data.user.profilePicture.url || '',
+                    small: data.user.profilePicture.url || ''
+                  }
+                }
+              }
+            });
+          } 
+          // Legacy format support
+          else if (data.avatarUrl || data.publicId) {
             console.log('Using legacy avatar URL format');
-            set({ 
-              user: { 
-                ...get().user, 
+            set({
+              user: {
+                ...get().user,
                 avatar: data.avatarUrl,
-                profilePicture: { 
+                profilePicture: {
+                  url: data.avatarUrl,
+                  key: data.publicId || '',
+                  lastUpdated: new Date().toISOString(),
                   versions: {
                     original: data.avatarUrl || '',
                     large: data.avatarUrl || '',
                     medium: data.avatarUrl || '',
                     small: data.avatarUrl || ''
                   },
-                  publicId: data.publicId || null,
-                  lastUpdated: new Date().toISOString()
-                } 
-              } 
-            });
-          } else if (data.versions?.original) {
-            // Format with profile picture object
-            set({ 
-              user: { 
-                ...get().user,
-                profilePicture: {
-                  ...data.profilePicture,
-                  lastUpdated: new Date().toISOString()
+                  publicId: data.publicId || null
                 }
               }
             });
           } else {
             console.warn('Unexpected response format from server:', data);
-            throw new Error('Invalid response format from server');
+            throw new Error('Invalid response format from server. Please try again.');
           }
           
           return data;
