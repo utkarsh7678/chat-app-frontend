@@ -46,11 +46,13 @@ const useStore = create(
           // Ensure formData has the correct field name 'profilePic'
           const uploadFormData = new FormData();
           const file = formData.get('avatar');
-          if (!file) throw new Error('No file found in form data');
+          if (!file) {
+            throw new Error('No file selected');
+          }
           uploadFormData.append('profilePic', file);
           
           const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
-          const uploadUrl = `${baseUrl}/api/user/profile-picture/${userId}`;
+          const uploadUrl = `${baseUrl}/api/upload/profile-picture/${userId}`;
           console.log('Uploading to URL:', uploadUrl);
           
           const response = await fetch(uploadUrl, {
@@ -225,62 +227,50 @@ const useStore = create(
 
       // Avatar upload function
       updateAvatar: async (formData) => {
-        const token = get().token;
-        const userId = get().user?._id;
-        
-        // Validation checks
-        if (!token) {
-          throw new Error("No authentication token found. Please log in again.");
-        }
-        
-        if (!userId) {
-          throw new Error("User ID not found. Please refresh the page and try again.");
-        }
-        
-        if (!formData || !formData.has('avatar')) {
-          throw new Error("Please select an image file to upload.");
-        }
-        
-        console.log('Uploading avatar for user:', userId);
-        console.log('API URL:', import.meta.env.VITE_API_URL);
-        
-        // Function to attempt the upload with retries
-        const attemptUpload = async (attempt = 1, maxAttempts = 3) => {
-          try {
-            console.log(`Upload attempt ${attempt} of ${maxAttempts}`);
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-            
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com'}/api/upload/profile-picture/${userId}`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              },
-              body: formData,
-              signal: controller.signal,
-              credentials: 'include',
-              mode: 'cors'
-            });
-            
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error) {
-            console.error(`Upload attempt ${attempt} failed:`, error);
-            if (attempt >= maxAttempts) throw error;
-            
-            // Wait before retrying (exponential backoff)
-            const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-            console.log(`Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return attemptUpload(attempt + 1, maxAttempts);
-          }
-        };
-        
         try {
-          const response = await attemptUpload();
+          const { user: currentUser, token } = get();
+          const userId = currentUser?._id;
+          
+          if (!userId) {
+            throw new Error("User ID not found");
+          }
+          
+          if (!formData || !formData.has('avatar')) {
+            throw new Error("Please select an image file to upload.");
+          }
+          
+          console.log('Uploading avatar for user:', userId);
+          const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
+          console.log('API URL:', baseUrl);
+          
+          // Create a new FormData instance
+          const uploadFormData = new FormData();
+          const file = formData.get('avatar');
+          
+          if (!file) {
+            throw new Error('No file found in form data');
+          }
+          
+          // Append the file with the correct field name
+          uploadFormData.append('profilePic', file);
+          
+          console.log('Preparing to upload file:', {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          });
+          
+          const response = await fetch(`${baseUrl}/api/upload/profile-picture/${userId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              // Let the browser set the Content-Type with boundary
+            },
+            body: uploadFormData,
+            credentials: 'include',
+            mode: 'cors'
+          });
+          
           console.log('Avatar upload response status:', response.status);
           
           // Clone the response to read it multiple times if needed
@@ -301,7 +291,20 @@ const useStore = create(
           // Check for non-OK response
           if (!response.ok) {
             console.error('Avatar upload failed:', data);
-            const errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
+            let errorMessage = 'Failed to upload avatar';
+            
+            if (response.status === 400) {
+              errorMessage = data?.error || 'Invalid file format or no file provided';
+            } else if (response.status === 401) {
+              errorMessage = 'Session expired. Please log in again.';
+            } else if (response.status === 413) {
+              errorMessage = 'File is too large. Please choose a smaller image.';
+            } else if (response.status >= 500) {
+              errorMessage = 'Server error. Please try again later.';
+            } else {
+              errorMessage = data?.message || `Server returned ${response.status}: ${response.statusText}`;
+            }
+            
             throw new Error(errorMessage);
           }
           
