@@ -143,7 +143,7 @@ export const uploadAvatar = async (file, token, userId) => {
     
     const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
     const response = await axios.post(
-      `${baseUrl}/api/user/profile-picture/${userId}`,
+      `${baseUrl}/api/upload/profile-picture/${userId}`,
       formData,
       {
         headers: {
@@ -179,4 +179,3 @@ export default {
   groups,
   notifications
 }; 
-
