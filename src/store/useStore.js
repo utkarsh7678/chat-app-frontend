@@ -251,7 +251,7 @@ const useStore = create(
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/upload-avatar`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com'}/api/user/profile-picture/${userId}`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`,
