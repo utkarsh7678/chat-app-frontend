@@ -225,7 +225,7 @@ const useStore = create(
       })),
       clearNotifications: () => set({ notifications: [] }),
 
-      // Avatar upload function
+      // Avatar upload function with improved error handling and logging
       updateAvatar: async (formData) => {
         try {
           const { user: currentUser, token } = get();
@@ -239,39 +239,53 @@ const useStore = create(
             throw new Error("Please select an image file to upload.");
           }
           
-          console.log('Uploading avatar for user:', userId);
+          console.log('🚀 Starting avatar upload for user:', userId);
           const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
-          console.log('API URL:', baseUrl);
+          console.log('🌐 API URL:', baseUrl);
           
-          // Create a new FormData instance
-          const uploadFormData = new FormData();
+          // Get the file from FormData
           const file = formData.get('avatar');
           
           if (!file) {
             throw new Error('No file found in form data');
           }
           
-          // Append the file with the correct field name
-          uploadFormData.append('profilePic', file);
+          // Validate file type and size
+          const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+          const maxSize = 5 * 1024 * 1024; // 5MB
           
-          console.log('Preparing to upload file:', {
+          if (!validTypes.includes(file.type)) {
+            throw new Error('Invalid file type. Please upload an image (JPEG, PNG, GIF, or WebP).');
+          }
+          
+          if (file.size > maxSize) {
+            throw new Error('File is too large. Maximum size is 5MB.');
+          }
+          
+          // Create a new FormData instance for the upload
+          const uploadFormData = new FormData();
+          uploadFormData.append('avatar', file); // Use 'avatar' as the field name to match multer config
+          
+          console.log('📤 Preparing to upload file:', {
             name: file.name,
             type: file.type,
-            size: file.size
+            size: file.size,
+            lastModified: new Date(file.lastModified).toISOString()
           });
           
+          // Make the upload request
           const response = await fetch(`${baseUrl}/api/upload/profile-picture/${userId}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
-              // Let the browser set the Content-Type with boundary
+              // Let the browser set the Content-Type with boundary for FormData
             },
             body: uploadFormData,
             credentials: 'include',
             mode: 'cors'
           });
           
-          console.log('Avatar upload response status:', response.status);
+          console.log('📥 Avatar upload response status:', response.status);
           
           // Clone the response to read it multiple times if needed
           const responseClone = response.clone();
