@@ -14,15 +14,40 @@ const api = axios.create({
 // Add token to requests
 api.interceptors.request.use(
   (config) => {
-    console.log('Making request to:', config.url, config.data);
-    try {
-      const token = useStore.getState().token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error) {
-      console.error('Error getting token from store:', error);
+    // Skip adding auth header for login/register endpoints
+    if (config.url && (config.url.includes('/auth/') || config.url === '/auth')) {
+      return config;
     }
+    
+    // Get token from localStorage as fallback
+    let token = localStorage.getItem('token');
+    
+    // If not in localStorage, try to get from store
+    if (!token) {
+      try {
+        const state = useStore.getState();
+        if (state && state.token) {
+          token = state.token;
+          // Also save to localStorage for persistence
+          localStorage.setItem('token', token);
+        }
+      } catch (error) {
+        console.error('Error getting token from store:', error);
+      }
+    }
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('No token available for request to:', config.url);
+    }
+    
+    console.log('Making request to:', config.url, {
+      method: config.method,
+      hasAuthHeader: !!token,
+      data: config.data
+    });
+    
     return config;
   },
   (error) => {
