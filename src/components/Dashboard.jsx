@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -261,8 +263,14 @@ const Dashboard = () => {
   }
   
   // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
-    navigate('/login');
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  // Don't render anything if user is not loaded yet or not authenticated
+  if (!user) {
     return null;
   }
 
