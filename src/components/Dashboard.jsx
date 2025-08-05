@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -7,9 +9,14 @@ import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
 // Icons
-import { FaUserPlus, FaUsers, FaUserFriends, FaSignOutAlt, FaSearch, FaPlus } from 'react-icons/fa6';
-import { IoMdNotificationsOutline } from 'react-icons/io';
-import { BsThreeDotsVertical } from 'react-icons/bs';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PeopleIcon from '@mui/icons-material/People';
+import GroupIcon from '@mui/icons-material/Group';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -342,7 +349,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
       <div className="dashboard-actions">
         <button 
           className="btn btn-primary create-group-btn"
@@ -351,12 +357,11 @@ const Dashboard = () => {
           + Create Group
         </button>
       </div>
-
       <div className="dashboard-grid">
         {/* Active Users Section */}
         <div className="dashboard-section active-users-section">
           <div className="section-header">
-            <h3>🟢 Active Users</h3>
+            <h3><span style={{color: '#4caf50'}}>•</span> Active Users</h3>
             <span className="user-count">{friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length} online</span>
           </div>
           <div className="users-list">
@@ -390,11 +395,10 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
         {/* Friends Section */}
         <div className="dashboard-section friends-section">
           <div className="section-header">
-            <h3>👥 My Friends</h3>
+            <h3><PeopleIcon style={{verticalAlign: 'middle', marginRight: '5px'}} /> Friends</h3>
             <span className="user-count">{friends.length} total</span>
           </div>
           <div className="users-list">
@@ -429,11 +433,10 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-
         {/* Groups Section */}
         <div className="dashboard-section groups-section">
           <div className="section-header">
-            <h3>📢 Groups</h3>
+            <h3><GroupIcon style={{verticalAlign: 'middle', marginRight: '5px'}} /> Groups</h3>
             <span className="user-count">{groups.length} groups</span>
           </div>
           <div className="groups-list">
