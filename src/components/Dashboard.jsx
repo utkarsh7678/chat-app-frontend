@@ -6,20 +6,28 @@ import useStore from '../store/useStore';
 import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
+// Icons
+import { FaUserPlus, FaUsers, FaUserFriends, FaSignOutAlt, FaSearch, FaPlus } from 'react-icons/fa';
+import { IoMdNotificationsOutline } from 'react-icons/io';
+import { BsThreeDotsVertical } from 'react-icons/bs';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Default avatar images
+const DEFAULT_AVATAR = 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+const DEFAULT_GROUP_AVATAR = 'https://cdn-icons-png.flaticon.com/512/2472/2472066.png';
+
 const Dashboard = () => {
-  // State and hooks at the top level
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [groupDescription, setGroupDescription] = useState("");
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('chats');
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // All hooks at the top level
   const navigate = useNavigate();
   const { socket } = useSocket();
   const { 
@@ -29,15 +37,13 @@ const Dashboard = () => {
     setGroups, 
     onlineUsers, 
     user, 
-    token: storeToken, 
-    isAuthenticated 
+    token: storeToken,
+    logout 
   } = useStore();
   
-  const authToken = localStorage.getItem("token");
-  
-  // Derived values will be used in the component
-  // These are defined at the top to maintain hook rules
+  const authToken = storeToken || localStorage.getItem("token");
 
+  // Fetch initial data
   useEffect(() => {
     if (!authToken) {
       navigate("/login");
