@@ -14,6 +14,10 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [groupDescription, setGroupDescription] = useState("");
   
   // All hooks at the top level
   const navigate = useNavigate();
@@ -103,6 +107,57 @@ const Dashboard = () => {
     if (e.key === 'Enter') {
       handleAddFriend();
     }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!groupName.trim() || selectedFriends.length === 0) {
+      alert('Please enter a group name and select at least one member');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API_URL}/api/groups/create`,
+        {
+          name: groupName,
+          description: groupDescription,
+          members: selectedFriends
+        },
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          } 
+        }
+      );
+
+      if (response.data.success) {
+        // Refresh groups list
+        const groupRes = await axios.get(`${API_URL}/api/groups`, { 
+          headers: { Authorization: `Bearer ${authToken}` } 
+        });
+        setGroups(groupRes.data);
+        
+        // Reset form
+        setGroupName('');
+        setGroupDescription('');
+        setSelectedFriends([]);
+        setShowCreateGroup(false);
+        
+        alert('Group created successfully!');
+      }
+    } catch (err) {
+      console.error('Error creating group:', err);
+      alert(err.response?.data?.error || 'Failed to create group');
+    }
+  };
+
+  const toggleFriendSelection = (friendId) => {
+    setSelectedFriends(prev => 
+      prev.includes(friendId)
+        ? prev.filter(id => id !== friendId)
+        : [...prev, friendId]
+    );
   };
 
   // Fetch user data if not available
@@ -203,6 +258,73 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Create Group Modal */}
+      {showCreateGroup && (
+        <div className="modal-overlay">
+          <div className="create-group-modal">
+            <h3>Create New Group</h3>
+            <div className="form-group">
+              <input
+                type="text"
+                placeholder="Group Name"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <textarea
+                placeholder="Group Description (Optional)"
+                value={groupDescription}
+                onChange={(e) => setGroupDescription(e.target.value)}
+                className="form-input"
+                rows="3"
+              />
+            </div>
+            <div className="friends-selection">
+              <h4>Select Members</h4>
+              {friends.length > 0 ? (
+                <div className="friends-list">
+                  {friends.map(friend => (
+                    <div 
+                      key={friend._id} 
+                      className={`friend-item ${selectedFriends.includes(friend._id) ? 'selected' : ''}`}
+                      onClick={() => toggleFriendSelection(friend._id)}
+                    >
+                      <img 
+                        src={friend.profilePicture?.url || '/default-avatar.png'} 
+                        alt={friend.username} 
+                        className="friend-avatar"
+                      />
+                      <span>{friend.username}</span>
+                      {selectedFriends.includes(friend._id) && (
+                        <span className="checkmark">✓</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No friends to add to group</p>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setShowCreateGroup(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateGroup}
+                disabled={!groupName.trim() || selectedFriends.length === 0}
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="dashboard-header">
         <div className="user-profile">
           <div className="user-info">
@@ -212,6 +334,15 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="dashboard-actions">
+        <button 
+          className="btn btn-primary create-group-btn"
+          onClick={() => setShowCreateGroup(true)}
+        >
+          + Create Group
+        </button>
       </div>
 
       <div className="dashboard-grid">
@@ -353,4 +484,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
 
