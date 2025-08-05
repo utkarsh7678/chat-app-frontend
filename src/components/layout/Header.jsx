@@ -121,12 +121,17 @@ const Header = () => {
           <IconButton
             onClick={handleMenuOpen}
             size="small"
-            sx={{ ml: 2 }}
+            sx={{ ml: 2, p: 0 }}
           >
             <Avatar
               alt={user?.username}
-              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
-              sx={{ width: 32, height: 32 }}
+              profilePicture={user?.profilePicture}
+              size="small"
+              sx={{ 
+                width: 32, 
+                height: 32,
+                border: `2px solid ${colors.primary.main}`
+              }}
             />
           </IconButton>
         </Box>
@@ -143,10 +148,16 @@ const Header = () => {
           <MenuItem onClick={handleProfileClick}>
             <Avatar
               alt={user?.username}
-              src={user?.profilePicture?.url ? `${import.meta.env.VITE_API_URL}${user.profilePicture.url}` : user?.avatar}
-              sx={{ width: 24, height: 24, mr: 1 }}
+              profilePicture={user?.profilePicture}
+              size="small"
+              sx={{ 
+                width: 24, 
+                height: 24, 
+                mr: 1,
+                border: `1px solid ${colors.divider}`
+              }}
             />
-            Profile
+            <Box sx={{ ml: 1 }}>Profile</Box>
           </MenuItem>
           <MenuItem onClick={handleSettingsClick}>
             <SettingsIcon fontSize="small" sx={{ mr: 1 }} />
