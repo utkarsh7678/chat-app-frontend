@@ -96,12 +96,30 @@ const Dashboard = () => {
     );
   }
 
+  // Get current user from the store
+  const { user } = useStore();
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
-        <h2>Welcome to ChatApp Dashboard</h2>
-        <div className="connection-status">
-          Connection: {socket ? "🟢 Connected" : "🔴 Disconnected"}
+        <div className="user-profile">
+          <div className="user-avatar-container">
+            <img 
+              src={user?.profilePicture?.url || "/default-avatar.png"} 
+              alt={user?.username || 'User'} 
+              className="user-avatar"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/default-avatar.png";
+              }}
+            />
+          </div>
+          <div className="user-info">
+            <h2>Welcome back, {user?.username || 'User'}!</h2>
+            <div className="connection-status">
+              Status: {socket ? "🟢 Online" : "🔴 Offline"}
+            </div>
+          </div>
         </div>
       </div>
 
