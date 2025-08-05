@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -250,6 +248,13 @@ const Dashboard = () => {
     );
   }
   
+  // Handle authentication and redirect
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   // Show error message if there was an error
   if (error) {
     return (
@@ -261,17 +266,14 @@ const Dashboard = () => {
       </div>
     );
   }
-  
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
 
   // Don't render anything if user is not loaded yet or not authenticated
-  if (!user) {
-    return null;
+  if (loading || !user) {
+    return (
+      <div className="dashboard-container">
+        <div className="loading-spinner">Loading dashboard...</div>
+      </div>
+    );
   }
 
   // Get profile picture URL and username with fallbacks
