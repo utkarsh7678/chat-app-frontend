@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -239,21 +241,21 @@ const Dashboard = () => {
     fetchData();
   }, [authToken, navigate, setFriends, setGroups, socket]);
   
-  // Show loading state while data is being fetched
-  if (loading) {
+  // Handle authentication and redirect
+  useEffect(() => {
+    if (!user && !loading) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading state while data is being fetched or user is not loaded
+  if (loading || !user) {
     return (
       <div className="dashboard-container">
         <div className="loading-spinner">Loading dashboard...</div>
       </div>
     );
   }
-  
-  // Handle authentication and redirect
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
 
   // Show error message if there was an error
   if (error) {
@@ -263,15 +265,6 @@ const Dashboard = () => {
           {error}
           <button onClick={() => window.location.reload()}>Retry</button>
         </div>
-      </div>
-    );
-  }
-
-  // Don't render anything if user is not loaded yet or not authenticated
-  if (loading || !user) {
-    return (
-      <div className="dashboard-container">
-        <div className="loading-spinner">Loading dashboard...</div>
       </div>
     );
   }
