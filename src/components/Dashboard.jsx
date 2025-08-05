@@ -9,13 +9,30 @@ import "./dashboard.css";
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Dashboard = () => {
+  // State and hooks at the top level
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // All hooks at the top level
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { friends, groups, setFriends, setGroups, onlineUsers } = useStore();
-
+  const { 
+    friends, 
+    groups, 
+    setFriends, 
+    setGroups, 
+    onlineUsers, 
+    user, 
+    token: storeToken, 
+    isAuthenticated 
+  } = useStore();
+  
   const authToken = localStorage.getItem("token");
+  
+  // Derived values will be used in the component
+  // These are defined at the top to maintain hook rules
 
   useEffect(() => {
     if (!authToken) {
@@ -60,13 +77,13 @@ const Dashboard = () => {
       const res = await axios.post(
         `${API_URL}/api/friends/add-friend`,
         { email },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
       alert(res.data.message);
       setEmail("");
       // Refresh friends list
       const friendsRes = await axios.get(`${API_URL}/api/friends`, { 
-        headers: { Authorization: `Bearer ${token}` } 
+        headers: { Authorization: `Bearer ${authToken}` } 
       });
       setFriends(friendsRes.data);
     } catch (err) {
@@ -87,19 +104,6 @@ const Dashboard = () => {
       handleAddFriend();
     }
   };
-
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div className="loading-spinner">Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  // Get current user and auth state from the store
-  const { user, token: storeToken, isAuthenticated } = useStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // Fetch user data if not available
   useEffect(() => {
@@ -132,16 +136,49 @@ const Dashboard = () => {
       setIsLoading(false);
     }
   }, [user, authToken, navigate]);
+  
+  // Handle initial data loading
+  useEffect(() => {
+    if (!authToken) {
+      navigate("/login");
+      return;
+    }
 
-  // Show loading state if data is being fetched
-  if (isLoading) {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const headers = { Authorization: `Bearer ${authToken}` };
+
+        const [groupRes, friendsRes] = await Promise.all([
+          axios.get(`${API_URL}/api/groups`, { headers }),
+          axios.get(`${API_URL}/api/friends`, { headers }),
+        ]);
+
+        setGroups(groupRes.data);
+        setFriends(friendsRes.data);
+        
+        if (socket) {
+          socket.emit("user-online");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [authToken, navigate, setFriends, setGroups, socket]);
+  
+  // Show loading state if either loading or isLoading is true
+  if (loading || isLoading) {
     return (
       <div className="dashboard-container">
-        <div className="loading-spinner">Loading your dashboard...</div>
+        <div className="loading-spinner">Loading dashboard...</div>
       </div>
     );
   }
-
+  
   // Show error message if there was an error
   if (error) {
     return (
@@ -153,14 +190,14 @@ const Dashboard = () => {
       </div>
     );
   }
-
+  
   // Redirect to login if not authenticated
   if (!isAuthenticated || !user) {
     navigate('/login');
     return null;
   }
 
-  // Get profile picture URL with fallback
+  // Get profile picture URL and username with fallbacks
   const profilePictureUrl = user?.profilePicture?.url || "/default-avatar.png";
   const username = user?.username || user?.email?.split('@')[0] || 'User';
 
@@ -327,3 +364,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
