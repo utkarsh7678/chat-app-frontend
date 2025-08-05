@@ -5,11 +5,12 @@ import { shallow } from 'zustand/shallow';
 const useStore = create(
   persist(
     (set, get) => ({
-      // Avatar upload function with improved error handling
+      // Avatar upload function with comprehensive error handling and validation
       updateAvatar: async (formData) => {
         const token = get().token;
         const user = get().user;
         
+        // Initial validation
         if (!token) {
           throw new Error('Please log in to upload an avatar');
         }
@@ -17,61 +18,62 @@ const useStore = create(
         if (!formData || !formData.has('avatar')) {
           throw new Error('Please select an image file');
         }
-        
-        if (!user?._id) {
-          console.error('No user ID found in store:', { user });
-          // Try to get the user ID from the token as a fallback
+
+        // File validation
+        const file = formData.get('avatar');
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!validTypes.includes(file.type)) {
+          throw new Error('Invalid file type. Please upload an image (JPEG, PNG, GIF, or WebP).');
+        }
+
+        if (file.size > maxSize) {
+          throw new Error('File is too large. Maximum size is 5MB.');
+        }
+
+        // Get or set user ID
+        let userId = user?._id;
+        if (!userId) {
           try {
             const tokenData = JSON.parse(atob(token.split('.')[1]));
             if (tokenData?.userId) {
-              console.log('Using user ID from token:', tokenData.userId);
-              // Update the user in the store with the ID from the token
-              set({ user: { ...user, _id: tokenData.userId } });
+              userId = tokenData.userId;
+              console.log('Using user ID from token:', userId);
+              set({ user: { ...user, _id: userId } });
             } else {
               throw new Error('No user ID in token');
             }
           } catch (tokenError) {
-            console.error('Error extracting user ID from token:', tokenError);
-            throw new Error('User not properly authenticated. Please log in again.');
+            console.error('Token error:', tokenError);
+            throw new Error('Authentication error. Please log in again.');
           }
         }
 
+        // Set loading state
+        set({ isLoading: true, error: null });
+
         try {
-          // Set loading state
-          set({ isLoading: true, error: null });
-          
-          const userId = get().user?._id;
-          if (!userId) throw new Error('User ID not found');
-          
-          // Ensure formData has the correct field name 'profilePic'
-          const uploadFormData = new FormData();
-          const file = formData.get('avatar');
-          if (!file) {
-            throw new Error('No file selected');
-          }
-          uploadFormData.append('profilePic', file);
-          
           const baseUrl = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
           const uploadUrl = `${baseUrl}/api/upload/profile-picture/${userId}`;
-          console.log('Uploading to URL:', uploadUrl);
+          
+          console.log('Uploading avatar to:', uploadUrl);
           
           const response = await fetch(uploadUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
-              // Don't set Content-Type header - let the browser set it with the correct boundary
             },
-            body: uploadFormData,
-            credentials: 'include' // Important for cookies/sessions
+            body: formData,
+            credentials: 'include'
           });
 
-          // Handle response
           const responseText = await response.text();
           console.log('Raw response:', responseText);
           
           let data;
           try {
-            data = JSON.parse(responseText);
+            data = responseText ? JSON.parse(responseText) : {};
           } catch (e) {
             console.error('Error parsing JSON:', e);
             throw new Error('Invalid server response: ' + responseText);
@@ -81,23 +83,33 @@ const useStore = create(
             throw new Error(data.message || `Server error: ${response.status}`);
           }
 
-          // Update user data with the new avatar
-          if (data.user) {
-            set({ 
-              user: { ...user, ...data.user },
-              isLoading: false 
-            });
-          } else if (data.avatarUrl) {
-            // Handle case where backend returns just the avatar URL
-            const updatedUser = { 
-              ...user, 
-              avatar: data.avatarUrl,
-              profilePicture: { url: data.avatarUrl }
-            };
-            set({ user: updatedUser, isLoading: false });
-          } else {
-            throw new Error('Invalid response from server');
+          // Process successful response
+          const avatarUrl = data.avatarUrl || 
+                          (data.user?.profilePicture?.url || 
+                           data.user?.avatar);
+
+          if (!avatarUrl) {
+            throw new Error('No avatar URL returned from server');
           }
+
+          // Ensure the URL is absolute
+          const fullAvatarUrl = avatarUrl.startsWith('http') 
+            ? avatarUrl 
+            : `${baseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
+
+          // Update user state with new avatar
+          const updatedUser = { 
+            ...user, 
+            avatar: fullAvatarUrl,
+            profilePicture: { url: fullAvatarUrl }
+          };
+
+          set({ 
+            user: updatedUser,
+            isLoading: false 
+          });
+
+          return { success: true, avatarUrl: fullAvatarUrl };
 
           return data;
         } catch (error) {
