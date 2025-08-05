@@ -123,10 +123,11 @@ const Dashboard = () => {
 
     try {
       const response = await axios.post(
-        `${API_URL}/api/groups/create`,
+        `${API_URL}/api/groups`,
         {
           name: groupName,
           description: groupDescription,
+          isPrivate: false,
           members: selectedFriends
         },
         { 
