@@ -6,7 +6,7 @@ import useStore from '../store/useStore';
 import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://realtime-chat-api-z27k.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const Dashboard = () => {
   const [email, setEmail] = useState("");
@@ -15,10 +15,10 @@ const Dashboard = () => {
   const { socket } = useSocket();
   const { friends, groups, setFriends, setGroups, onlineUsers } = useStore();
 
-  const token = localStorage.getItem("token");
+  const authToken = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!token) {
+    if (!authToken) {
       navigate("/login");
       return;
     }
@@ -26,7 +26,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = { Authorization: `Bearer ${authToken}` };
 
         const [groupRes, friendsRes] = await Promise.all([
           axios.get(`${API_URL}/api/groups`, { headers }),
@@ -48,7 +48,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, [navigate, setFriends, setGroups, socket]);
+  }, [navigate, setFriends, setGroups, socket, authToken]);
 
   const handleAddFriend = async () => {
     if (!email.trim()) {
@@ -96,8 +96,73 @@ const Dashboard = () => {
     );
   }
 
-  // Get current user from the store
-  const { user } = useStore();
+  // Get current user and auth state from the store
+  const { user, token: storeToken, isAuthenticated } = useStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch user data if not available
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!authToken) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`${API_URL}/api/users/me`, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+        
+        if (response.data.user) {
+          useStore.getState().setUser(response.data.user);
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setError('Failed to load user data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (!user && authToken) {
+      fetchUserData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user, authToken, navigate]);
+
+  // Show loading state if data is being fetched
+  if (isLoading) {
+    return (
+      <div className="dashboard-container">
+        <div className="loading-spinner">Loading your dashboard...</div>
+      </div>
+    );
+  }
+
+  // Show error message if there was an error
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <div className="error-message">
+          {error}
+          <button onClick={() => window.location.reload()}>Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
+    navigate('/login');
+    return null;
+  }
+
+  // Get profile picture URL with fallback
+  const profilePictureUrl = user?.profilePicture?.url || "/default-avatar.png";
+  const username = user?.username || user?.email?.split('@')[0] || 'User';
 
   return (
     <div className="dashboard-container">
@@ -105,8 +170,8 @@ const Dashboard = () => {
         <div className="user-profile">
           <div className="user-avatar-container">
             <img 
-              src={user?.profilePicture?.url || "/default-avatar.png"} 
-              alt={user?.username || 'User'} 
+              src={profilePictureUrl}
+              alt={username}
               className="user-avatar"
               onError={(e) => {
                 e.target.onerror = null;
@@ -115,7 +180,7 @@ const Dashboard = () => {
             />
           </div>
           <div className="user-info">
-            <h2>Welcome back, {user?.username || 'User'}!</h2>
+            <h2>Welcome back, {username}!</h2>
             <div className="connection-status">
               Status: {socket ? "🟢 Online" : "🔴 Offline"}
             </div>
@@ -262,9 +327,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
-
-
-
-
