@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -183,7 +185,7 @@ const Dashboard = () => {
       }
 
       try {
-        setIsLoading(true);
+        setLoading(true);
         const response = await axios.get(`${API_URL}/api/users/me`, {
           headers: { Authorization: `Bearer ${authToken}` }
         });
@@ -195,14 +197,14 @@ const Dashboard = () => {
         console.error('Error fetching user data:', err);
         setError('Failed to load user data. Please try again.');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     if (!user && authToken) {
       fetchUserData();
     } else {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [user, authToken, navigate]);
   
