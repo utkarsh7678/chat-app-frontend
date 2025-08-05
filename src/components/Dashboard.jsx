@@ -205,17 +205,6 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div className="user-profile">
-          <div className="user-avatar-container">
-            <img 
-              src={profilePictureUrl}
-              alt={username}
-              className="user-avatar"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/default-avatar.png";
-              }}
-            />
-          </div>
           <div className="user-info">
             <h2>Welcome back, {username}!</h2>
             <div className="connection-status">
