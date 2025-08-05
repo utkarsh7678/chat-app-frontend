@@ -7,7 +7,7 @@ import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
 // Icons
-import { FaUserPlus, FaUsers, FaUserFriends, FaSignOutAlt, FaSearch, FaPlus } from 'react-icons/fa';
+import { FaUserPlus, FaUsers, FaUserFriends, FaSignOutAlt, FaSearch, FaPlus } from 'react-icons/fa6';
 import { IoMdNotificationsOutline } from 'react-icons/io';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 
@@ -491,5 +491,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
