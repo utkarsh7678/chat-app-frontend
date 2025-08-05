@@ -1,7 +1,5 @@
 
 
-
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -241,8 +239,8 @@ const Dashboard = () => {
     fetchData();
   }, [authToken, navigate, setFriends, setGroups, socket]);
   
-  // Show loading state if either loading or isLoading is true
-  if (loading || isLoading) {
+  // Show loading state while data is being fetched
+  if (loading) {
     return (
       <div className="dashboard-container">
         <div className="loading-spinner">Loading dashboard...</div>
