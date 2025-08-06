@@ -2,7 +2,8 @@
 
 
 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from '../context/SocketContext';
@@ -11,14 +12,18 @@ import { isUserOnline } from '../utils/presence';
 import "./dashboard.css";
 
 // Icons
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PeopleIcon from '@mui/icons-material/People';
-import GroupIcon from '@mui/icons-material/Group';
-import LogoutIcon from '@mui/icons-material/Logout';
-import SearchIcon from '@mui/icons-material/Search';
-import AddIcon from '@mui/icons-material/Add';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { 
+  People as PeopleIcon, 
+  Group as GroupIcon,
+  PersonAdd as PersonAddIcon,
+  Search as SearchIcon,
+  Add as AddIcon,
+  NotificationsNone as NotificationsNoneIcon,
+  MoreVert as MoreVertIcon,
+  Logout as LogoutIcon,
+  CheckCircle as CheckCircleIcon,
+  Circle as CircleIcon
+} from '@mui/icons-material';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -274,59 +279,343 @@ const Dashboard = () => {
   const username = user?.username || user?.email?.split('@')[0] || 'User';
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard">
+      {/* Sidebar */}
+      <div className="dashboard-sidebar">
+        <div className="sidebar-header">
+          <h2>ChatApp</h2>
+          <div className="user-status">
+            <span className={`status-indicator ${socket ? 'online' : 'offline'}`}></span>
+            <span>{socket ? 'Online' : 'Offline'}</span>
+          </div>
+        </div>
+        
+        <div className="sidebar-search">
+          <SearchIcon className="search-icon" />
+          <input 
+            type="text" 
+            placeholder="Search..." 
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <nav className="sidebar-nav">
+          <button className="nav-item active">
+            <PeopleIcon />
+            <span>Friends</span>
+          </button>
+          <button className="nav-item">
+            <GroupIcon />
+            <span>Groups</span>
+          </button>
+          <button className="nav-item">
+            <NotificationsNoneIcon />
+            <span>Notifications</span>
+          </button>
+        </nav>
+
+        <div className="user-profile">
+          <img 
+            src={user?.profilePicture?.url || '/default-avatar.png'} 
+            alt={username} 
+            className="profile-avatar"
+          />
+          <div className="profile-info">
+            <span className="username">{username}</span>
+            <span className="user-email">{user?.email}</span>
+          </div>
+          <button className="settings-btn">
+            <MoreVertIcon />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="dashboard-main">
+        {/* Header */}
+        <header className="dashboard-header">
+          <h1>Dashboard</h1>
+          <div className="header-actions">
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowCreateGroup(true)}
+            >
+              <AddIcon /> Create Group
+            </button>
+            <button className="btn btn-icon">
+              <NotificationsNoneIcon />
+            </button>
+            <button className="btn btn-icon" onClick={logout}>
+              <LogoutIcon />
+            </button>
+          </div>
+        </header>
+
+        {/* Stats Cards */}
+        <div className="stats-container">
+          <div className="stat-card">
+            <div className="stat-icon friends">
+              <PeopleIcon />
+            </div>
+            <div className="stat-info">
+              <h3>{friends.length}</h3>
+              <p>Friends</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon groups">
+              <GroupIcon />
+            </div>
+            <div className="stat-info">
+              <h3>{groups.length}</h3>
+              <p>Groups</p>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon online">
+              <CheckCircleIcon />
+            </div>
+            <div className="stat-info">
+              <h3>{friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length}</h3>
+              <p>Online Now</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Active Users Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2>Active Now</h2>
+              <span className="badge">{friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length} online</span>
+            </div>
+            <div className="user-list">
+              {friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length > 0 ? (
+                friends
+                  .filter(friend => isUserOnline(friend._id, onlineUsers))
+                  .map((user) => (
+                    <div 
+                      key={user._id} 
+                      className="user-card active"
+                      onClick={() => handleChat(user._id, "user")}
+                    >
+                      <div className="user-avatar">
+                        <img 
+                          src={user.profilePicture?.url || "/default-avatar.png"} 
+                          alt={user.username} 
+                        />
+                        <span className="status-indicator online"></span>
+                      </div>
+                      <div className="user-details">
+                        <h4>{user.username}</h4>
+                        <p>Active now</p>
+                      </div>
+                      <button className="chat-btn">
+                        <span className="material-icons">chat_bubble</span>
+                      </button>
+                    </div>
+                  ))
+              ) : (
+                <div className="empty-state">
+                  <CircleIcon className="empty-icon" />
+                  <p>No active users</p>
+                  <small>When friends are active, they'll appear here</small>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Chats Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2>Recent Chats</h2>
+              <button className="btn-text">See all</button>
+            </div>
+            <div className="chat-list">
+              {friends.length > 0 ? (
+                friends.slice(0, 3).map((friend) => (
+                  <div 
+                    key={friend._id} 
+                    className={`chat-item ${isUserOnline(friend._id, onlineUsers) ? 'online' : ''}`}
+                    onClick={() => handleChat(friend._id, "user")}
+                  >
+                    <div className="chat-avatar">
+                      <img 
+                        src={friend.profilePicture?.url || "/default-avatar.png"} 
+                        alt={friend.username} 
+                      />
+                      <span className={`status-indicator ${isUserOnline(friend._id, onlineUsers) ? 'online' : 'offline'}`}></span>
+                    </div>
+                    <div className="chat-info">
+                      <h4>{friend.username}</h4>
+                      <p className="last-message">Tap to start chatting</p>
+                    </div>
+                    <div className="chat-meta">
+                      <span className="time">Now</span>
+                      {isUserOnline(friend._id, onlineUsers) && (
+                        <span className="unread-count">1</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state">
+                  <PeopleIcon className="empty-icon" />
+                  <p>No friends yet</p>
+                  <small>Add friends to start chatting</small>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Groups Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2>Your Groups</h2>
+              <button 
+                className="btn-text"
+                onClick={() => setShowCreateGroup(true)}
+              >
+                Create New
+              </button>
+            </div>
+            <div className="group-list">
+              {groups.length > 0 ? (
+                groups.map((group) => (
+                  <div 
+                    key={group._id} 
+                    className="group-card"
+                    onClick={() => handleChat(group._id, "group")}
+                  >
+                    <div className="group-avatar">
+                      <img 
+                        src={group.avatar || "/default-group-avatar.png"} 
+                        alt={group.name} 
+                      />
+                    </div>
+                    <div className="group-info">
+                      <h4>{group.name}</h4>
+                      <p>{group.members?.length || 0} members • {group.lastMessage || 'No messages yet'}</p>
+                    </div>
+                    <div className="group-actions">
+                      <button className="btn-icon">
+                        <MoreVertIcon />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state">
+                  <GroupIcon className="empty-icon" />
+                  <p>No groups yet</p>
+                  <small>Create a group to start chatting with multiple friends</small>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Add Friend Section */}
+          <div className="content-section">
+            <div className="section-header">
+              <h2>Add Friend</h2>
+            </div>
+            <div className="add-friend-card">
+              <div className="search-container">
+                <SearchIcon className="search-icon" />
+                <input
+                  type="email"
+                  placeholder="Enter friend's email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="search-input"
+                />
+              </div>
+              <button 
+                className="btn btn-primary"
+                onClick={handleAddFriend}
+                disabled={!email.trim()}
+              >
+                <PersonAddIcon /> Add Friend
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Create Group Modal */}
       {showCreateGroup && (
         <div className="modal-overlay">
-          <div className="create-group-modal">
-            <h3>Create New Group</h3>
-            <div className="form-group">
-              <input
-                type="text"
-                placeholder="Group Name"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <textarea
-                placeholder="Group Description (Optional)"
-                value={groupDescription}
-                onChange={(e) => setGroupDescription(e.target.value)}
-                className="form-input"
-                rows="3"
-              />
-            </div>
-            <div className="friends-selection">
-              <h4>Select Members</h4>
-              {friends.length > 0 ? (
-                <div className="friends-list">
-                  {friends.map(friend => (
-                    <div 
-                      key={friend._id} 
-                      className={`friend-item ${selectedFriends.includes(friend._id) ? 'selected' : ''}`}
-                      onClick={() => toggleFriendSelection(friend._id)}
-                    >
-                      <img 
-                        src={friend.profilePicture?.url || '/default-avatar.png'} 
-                        alt={friend.username} 
-                        className="friend-avatar"
-                      />
-                      <span>{friend.username}</span>
-                      {selectedFriends.includes(friend._id) && (
-                        <span className="checkmark">✓</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>No friends to add to group</p>
-              )}
-            </div>
-            <div className="modal-actions">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Create New Group</h2>
               <button 
-                className="btn btn-secondary"
+                className="close-btn"
+                onClick={() => setShowCreateGroup(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Group Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter group name"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Description (Optional)</label>
+                <textarea
+                  placeholder="What's this group about?"
+                  value={groupDescription}
+                  onChange={(e) => setGroupDescription(e.target.value)}
+                  className="form-input"
+                  rows="3"
+                />
+              </div>
+              <div className="form-group">
+                <label>Add Members</label>
+                {friends.length > 0 ? (
+                  <div className="member-selection">
+                    {friends.map(friend => (
+                      <div 
+                        key={friend._id} 
+                        className={`member-item ${selectedFriends.includes(friend._id) ? 'selected' : ''}`}
+                        onClick={() => toggleFriendSelection(friend._id)}
+                      >
+                        <img 
+                          src={friend.profilePicture?.url || '/default-avatar.png'} 
+                          alt={friend.username} 
+                          className="member-avatar"
+                        />
+                        <span className="member-name">{friend.username}</span>
+                        {selectedFriends.includes(friend._id) ? (
+                          <CheckCircleIcon className="check-icon" />
+                        ) : (
+                          <div className="empty-check"></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <PeopleIcon className="empty-icon" />
+                    <p>No friends to add</p>
+                    <small>Add friends first to create a group</small>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-outline"
                 onClick={() => setShowCreateGroup(false)}
               >
                 Cancel
@@ -342,156 +631,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      <div className="dashboard-header">
-        <div className="user-profile">
-          <div className="user-info">
-            <h2>Welcome back, {username}!</h2>
-            <div className="connection-status">
-              Status: {socket ? "🟢 Online" : "🔴 Offline"}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="dashboard-actions">
-        <button 
-          className="btn btn-primary create-group-btn"
-          onClick={() => setShowCreateGroup(true)}
-        >
-          + Create Group
-        </button>
-      </div>
-      <div className="dashboard-grid">
-        {/* Active Users Section */}
-        <div className="dashboard-section active-users-section">
-          <div className="section-header">
-            <h3><span style={{color: '#4caf50'}}>•</span> Active Users</h3>
-            <span className="user-count">{friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length} online</span>
-          </div>
-          <div className="users-list">
-            {friends.filter(friend => isUserOnline(friend._id, onlineUsers)).length > 0 ? (
-              friends
-                .filter(friend => isUserOnline(friend._id, onlineUsers))
-                .map((user) => (
-                  <div 
-                    key={user._id} 
-                    className="user-item active-user"
-                    onClick={() => handleChat(user._id, "user")}
-                  >
-                    <div className="user-avatar">
-                      <img 
-                        src={user.profilePicture || "/default-avatar.png"} 
-                        alt={user.username} 
-                        className="avatar-img"
-                      />
-                      <div className="online-indicator"></div>
-                    </div>
-                    <div className="user-info">
-                      <span className="username">{user.username}</span>
-                      <span className="status">🟢 Online</span>
-                    </div>
-                  </div>
-                ))
-            ) : (
-              <div className="empty-state">
-                <p>No active users</p>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Friends Section */}
-        <div className="dashboard-section friends-section">
-          <div className="section-header">
-            <h3><PeopleIcon style={{verticalAlign: 'middle', marginRight: '5px'}} /> Friends</h3>
-            <span className="user-count">{friends.length} total</span>
-          </div>
-          <div className="users-list">
-            {friends.length > 0 ? (
-              friends.map((friend) => (
-                <div 
-                  key={friend._id} 
-                  className={`user-item ${isUserOnline(friend._id, onlineUsers) ? 'active-user' : 'inactive-user'}`}
-                  onClick={() => handleChat(friend._id, "user")}
-                >
-                  <div className="user-avatar">
-                    <img 
-                      src={friend.profilePicture || "/default-avatar.png"} 
-                      alt={friend.username} 
-                      className="avatar-img"
-                    />
-                    <div className={`status-indicator ${isUserOnline(friend._id, onlineUsers) ? 'online' : 'offline'}`}></div>
-                  </div>
-                  <div className="user-info">
-                    <span className="username">{friend.username}</span>
-                    <span className="status">
-                      {isUserOnline(friend._id, onlineUsers) ? "🟢 Online" : "⚪ Offline"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No friends yet</p>
-                <p className="empty-hint">Add friends to start chatting!</p>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Groups Section */}
-        <div className="dashboard-section groups-section">
-          <div className="section-header">
-            <h3><GroupIcon style={{verticalAlign: 'middle', marginRight: '5px'}} /> Groups</h3>
-            <span className="user-count">{groups.length} groups</span>
-          </div>
-          <div className="groups-list">
-            {groups.length > 0 ? (
-              groups.map((group) => (
-                <div 
-                  key={group._id} 
-                  className="group-item"
-                  onClick={() => handleChat(group._id, "group")}
-                >
-                  <div className="group-avatar">
-                    <img 
-                      src={group.avatar || "/default-group-avatar.png"} 
-                      alt={group.name} 
-                      className="avatar-img"
-                    />
-                  </div>
-                  <div className="group-info">
-                    <span className="group-name">{group.name}</span>
-                    <span className="member-count">{group.members?.length || 0} members</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No groups yet</p>
-                <p className="empty-hint">Create or join groups to start group chats!</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Add Friend Section */}
-        <div className="dashboard-section add-friend-section">
-          <div className="section-header">
-            <h3>➕ Add Friend</h3>
-          </div>
-          <div className="add-friend-form">
-            <input
-              type="email"
-              placeholder="Enter friend's email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="email-input"
-            />
-            <button onClick={handleAddFriend} className="add-friend-btn">
-              Add Friend
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
