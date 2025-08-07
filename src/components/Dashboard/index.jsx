@@ -128,16 +128,16 @@ const Dashboard = () => {
         };
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-        // Fetch friends
-        const [friendsResponse, groupsResponse, requestsResponse] = await Promise.all([
+        // Fetch friends and groups
+        const [friendsResponse, groupsResponse] = await Promise.all([
           axios.get(`${API_URL}/api/friends`, { headers }),
-          axios.get(`${API_URL}/api/groups`, { headers }),
-          axios.get(`${API_URL}/api/friends/requests`, { headers })
+          axios.get(`${API_URL}/api/groups`, { headers })
         ]);
 
         if (friendsResponse.data) setFriends(friendsResponse.data);
         if (groupsResponse.data) setGroups(groupsResponse.data);
-        if (requestsResponse.data) setFriendRequests(requestsResponse.data);
+        // Friend requests not implemented in backend yet
+        setFriendRequests([]);
 
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
