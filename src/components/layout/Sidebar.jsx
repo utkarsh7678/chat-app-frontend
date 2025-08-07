@@ -11,7 +11,12 @@ import {
   useMediaQuery,
   useTheme,
   Typography,
-  Badge
+  Badge,
+  IconButton,
+  Collapse,
+  Tooltip,
+  Avatar as MuiAvatar,
+  styled
 } from '@mui/material';
 import {
   Chat as ChatIcon,
@@ -19,192 +24,381 @@ import {
   People as PeopleIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Star as StarIcon,
+  Mail as MailIcon,
+  Settings as SettingsIcon,
+  Logout as LogoutIcon,
+  Notifications as NotificationsIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../../store/useStore';
 import { getThemeColors } from '../../utils/theme';
 import { isUserOnline } from '../../utils/presence';
-import Avatar from '../Avatar';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
-const Sidebar = () => {
+const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
+  width: drawerWidth,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+  boxSizing: 'border-box',
+  '& .MuiDrawer-paper': {
+    width: drawerWidth,
+    transition: theme.transitions.create('width', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    boxSizing: 'border-box',
+    borderRight: 'none',
+    background: theme.palette.background.paper,
+    boxShadow: theme.shadows[3],
+  },
+  '& .MuiListItemButton-root': {
+    borderRadius: theme.spacing(1),
+    margin: theme.spacing(0.5, 1.5, 0.5, 1.5),
+    '&.Mui-selected': {
+      backgroundColor: theme.palette.primary.light,
+      color: theme.palette.primary.main,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.light,
+      },
+    },
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+    },
+  },
+  '& .MuiListItemIcon-root': {
+    minWidth: 40,
+    color: 'inherit',
+  },
+}));
+
+const Sidebar = ({ open, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const colors = getThemeColors();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { sidebarOpen, toggleSidebar, friends, groups, friendRequests, onlineUsers } = useStore();
+  const { friends, groups, friendRequests, onlineUsers, logout } = useStore();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [expanded, setExpanded] = useState({
+    friends: true,
+    groups: true,
+  });
 
-  const handleDrawerToggle = () => {
-    if (isMobile) {
-      toggleSidebar();
-    }
+  const unreadFriendRequests = friendRequests.filter(r => !r.read).length;
+  const unreadMessages = 0; // You can implement this based on your message store
+
+  const handleExpandClick = (section) => {
+    setExpanded(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   const handleNavigation = (path) => {
     navigate(path);
-    handleDrawerToggle();
+    if (isMobile) {
+      onClose();
+    }
   };
 
-  const handleSearchClick = () => {
-    setSearchOpen(true);
-    handleDrawerToggle();
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  const unreadFriendRequests = friendRequests.filter(r => !r.read).length||0;
+  const menuItems = [
+    { 
+      text: 'Dashboard', 
+      icon: <DashboardIcon />, 
+      path: '/dashboard',
+      active: location.pathname === '/dashboard'
+    },
+    { 
+      text: 'Chats', 
+      icon: <ChatIcon />, 
+      path: '/chats',
+      badge: unreadMessages > 0 ? unreadMessages : null,
+      active: location.pathname.startsWith('/chat')
+    },
+    { 
+      text: 'Friends', 
+      icon: <PeopleIcon />, 
+      path: '/friends',
+      badge: unreadFriendRequests > 0 ? unreadFriendRequests : null,
+      active: location.pathname === '/friends'
+    },
+    { 
+      text: 'Groups', 
+      icon: <GroupIcon />, 
+      path: '/groups',
+      active: location.pathname.startsWith('/group')
+    },
+  ];
 
-  const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Dashboard */}
-      <ListItemButton 
-        onClick={() => handleNavigation('/dashboard')}
-        selected={location.pathname === '/dashboard'}
-      >
-        <ListItemIcon>
-          <DashboardIcon />
-        </ListItemIcon>
-        <ListItemText primary="Dashboard" />
-      </ListItemButton>
-
-      <Divider />
-
-      {/* Search */}
-      <ListItemButton onClick={handleSearchClick}>
-        <ListItemIcon>
-          <SearchIcon />
-        </ListItemIcon>
-        <ListItemText primary="Search" />
-      </ListItemButton>
-
-      <Divider />
-
-      {/* Friends */}
-      <List>
-        <ListItem>
-          <ListItemText
-            primary={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="subtitle2">Friends</Typography>
-                {unreadFriendRequests > 0 && (
-                  <Badge badgeContent={unreadFriendRequests} color="error" />
-                )}
-              </Box>
-            }
-          />
-        </ListItem>
-        {friends.map((friend) => (
-          <ListItem key={friend._id} disablePadding>
-            <ListItemButton
-              selected={location.pathname === `/chat/${friend._id}`}
-              onClick={() => handleNavigation(`/chat/${friend._id}`)}
-            >
-              <ListItemIcon>
-                <Badge
-                  overlap="circular"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  variant="dot"
-                  color={isUserOnline(friend._id, Array.from(onlineUsers)) ? 'success' : 'default'}
-                >
-                  <Avatar
-                    src={friend.avatar}
-                    alt={friend.username}
-                    size={32}
-                  />
-                </Badge>
-              </ListItemIcon>
-              <ListItemText
-                primary={friend.username}
-                secondary={friend.status || 'No status'}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-
-      <Divider />
-
-      {/* Groups */}
-      <List>
-        <ListItem>
-          <ListItemText primary="Groups" />
-          <ListItemIcon>
-            <AddIcon onClick={() => handleNavigation('/groups/new')} />
-          </ListItemIcon>
-        </ListItem>
-        {groups.map((group) => (
-          <ListItem key={group._id} disablePadding>
-            <ListItemButton
-              selected={location.pathname === `/chat/group/${group._id}`}
-              onClick={() => handleNavigation(`/chat/group/${group._id}`)}
-            >
-              <ListItemIcon>
-                <Avatar
-                  src={group.avatar}
-                  alt={group.name}
-                  size={32}
-                />
-              </ListItemIcon>
-              <ListItemText
-                primary={group.name}
-                secondary={`${group.members.length} members`}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
+  const bottomMenuItems = [
+    { 
+      text: 'Settings', 
+      icon: <SettingsIcon />, 
+      path: '/settings',
+      active: location.pathname === '/settings'
+    },
+    { 
+      text: 'Logout', 
+      icon: <LogoutIcon />, 
+      onClick: handleLogout
+    },
+  ];
 
   return (
-    <Box
-      component="nav"
-      sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+    <StyledDrawer
+      variant={isMobile ? 'temporary' : 'permanent'}
+      open={open}
+      onClose={onClose}
+      ModalProps={{
+        keepMounted: true, // Better open performance on mobile
+      }}
     >
-      {/* Mobile drawer */}
-      <Drawer
-        variant="temporary"
-        open={sidebarOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true // Better open performance on mobile
-        }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            bgcolor: colors.surface,
-            color: colors.text.primary,
-            borderRight: `1px solid ${colors.divider}`
-          }
-        }}
-      >
-        {drawer}
-      </Drawer>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        height: '100%',
+        p: 2,
+        pt: 3,
+      }}>
+        {/* Logo/Brand */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'center',
+          mb: 3,
+          px: 1,
+        }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            ChatApp
+          </Typography>
+        </Box>
 
-      {/* Desktop drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            bgcolor: colors.surface,
-            color: colors.text.primary,
-            borderRight: `1px solid ${colors.divider}`
-          }
-        }}
-        open
-      >
-        {drawer}
-      </Drawer>
-    </Box>
+        {/* Search */}
+        <Box sx={{ px: 1.5, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              bgcolor: 'action.hover',
+              borderRadius: 2,
+              px: 2,
+              py: 1,
+            }}
+          >
+            <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+            <input
+              type="text"
+              placeholder="Search..."
+              style={{
+                border: 'none',
+                background: 'transparent',
+                width: '100%',
+                outline: 'none',
+                color: theme.palette.text.primary,
+                '::placeholder': {
+                  color: theme.palette.text.secondary,
+                },
+              }}
+            />
+          </Box>
+        </Box>
+
+        {/* Main Menu */}
+        <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          {menuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                selected={item.active}
+                onClick={() => handleNavigation(item.path)}
+              >
+                <ListItemIcon sx={{ color: 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: item.active ? 600 : 'normal',
+                  }}
+                />
+                {item.badge && (
+                  <Box
+                    sx={{
+                      bgcolor: 'error.main',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {item.badge}
+                  </Box>
+                )}
+              </ListItemButton>
+            </ListItem>
+          ))}
+
+          {/* Friends Section */}
+          <Box>
+            <ListItemButton onClick={() => handleExpandClick('friends')}>
+              <ListItemText 
+                primary="Friends" 
+                primaryTypographyProps={{
+                  variant: 'subtitle2',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                }}
+              />
+              {expanded.friends ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </ListItemButton>
+            <Collapse in={expanded.friends} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {friends.map((friend) => (
+                  <ListItem key={friend._id} disablePadding>
+                    <ListItemButton
+                      sx={{ pl: 4 }}
+                      onClick={() => handleNavigation(`/chat/${friend._id}`)}
+                    >
+                      <Box sx={{ position: 'relative', mr: 2 }}>
+                        <MuiAvatar 
+                          src={friend.avatar} 
+                          alt={friend.username}
+                          sx={{ width: 28, height: 28 }}
+                        />
+                        {isUserOnline(onlineUsers, friend._id) && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              width: 10,
+                              height: 10,
+                              bgcolor: '#44b700',
+                              borderRadius: '50%',
+                              border: `2px solid ${theme.palette.background.paper}`,
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <ListItemText 
+                        primary={friend.username} 
+                        primaryTypographyProps={{
+                          variant: 'body2',
+                          noWrap: true,
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                {friends.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ pl: 4, py: 1 }}>
+                    No friends yet
+                  </Typography>
+                )}
+              </List>
+            </Collapse>
+          </Box>
+
+          {/* Groups Section */}
+          <Box>
+            <ListItemButton onClick={() => handleExpandClick('groups')}>
+              <ListItemText 
+                primary="Groups" 
+                primaryTypographyProps={{
+                  variant: 'subtitle2',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                }}
+              />
+              {expanded.groups ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </ListItemButton>
+            <Collapse in={expanded.groups} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {groups.map((group) => (
+                  <ListItem key={group._id} disablePadding>
+                    <ListItemButton
+                      sx={{ pl: 4 }}
+                      onClick={() => handleNavigation(`/group/${group._id}`)}
+                    >
+                      <Box sx={{ position: 'relative', mr: 2 }}>
+                        <MuiAvatar 
+                          src={group.avatar} 
+                          alt={group.name}
+                          sx={{ width: 28, height: 28 }}
+                        >
+                          {group.name[0]?.toUpperCase()}
+                        </MuiAvatar>
+                      </Box>
+                      <ListItemText 
+                        primary={group.name}
+                        primaryTypographyProps={{
+                          variant: 'body2',
+                          noWrap: true,
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+                {groups.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ pl: 4, py: 1 }}>
+                    No groups yet
+                  </Typography>
+                )}
+              </List>
+            </Collapse>
+          </Box>
+        </List>
+
+        {/* Bottom Menu */}
+        <List>
+          <Divider sx={{ my: 1 }} />
+          {bottomMenuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                onClick={() => item.onClick ? item.onClick() : handleNavigation(item.path)}
+                selected={item.active}
+              >
+                <ListItemIcon sx={{ color: 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    fontWeight: item.active ? 600 : 'normal',
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </StyledDrawer>
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
