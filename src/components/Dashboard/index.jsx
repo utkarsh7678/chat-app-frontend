@@ -36,7 +36,7 @@ import {
   EmojiPeople as EmojiPeopleIcon,
   GroupAdd as GroupAddIcon
 } from '@mui/icons-material';
-import { useStore } from '../../store/useStore';
+import useStore from '../../store/useStore';
 import { isUserOnline } from '../../utils/presence';
 
 // Styled Components
