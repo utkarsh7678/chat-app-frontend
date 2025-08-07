@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { getThemeColors } from '../../utils/theme';
-import { useStore } from '../../store/useStore';
+import useStore from '../../store/useStore';
 
 const MainContent = styled(Box)(({ theme, open }) => ({
   flexGrow: 1,
