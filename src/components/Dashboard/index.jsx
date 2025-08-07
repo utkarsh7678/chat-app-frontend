@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme, styled } from '@mui/material/styles';
+import axios from 'axios';
 import {
   Box,
   Typography,
@@ -94,6 +95,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const { 
     user, 
@@ -101,8 +104,52 @@ const Dashboard = () => {
     groups, 
     notifications, 
     onlineUsers,
-    friendRequests
+    friendRequests,
+    setFriends,
+    setGroups,
+    setFriendRequests,
+    token
   } = useStore();
+
+  // Fetch friends and groups data
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const headers = { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+        // Fetch friends
+        const [friendsResponse, groupsResponse, requestsResponse] = await Promise.all([
+          axios.get(`${API_URL}/api/friends`, { headers }),
+          axios.get(`${API_URL}/api/groups`, { headers }),
+          axios.get(`${API_URL}/api/friends/requests`, { headers })
+        ]);
+
+        if (friendsResponse.data) setFriends(friendsResponse.data);
+        if (groupsResponse.data) setGroups(groupsResponse.data);
+        if (requestsResponse.data) setFriendRequests(requestsResponse.data);
+
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        const errorMessage = err.response?.data?.message || 'Failed to load dashboard data. Please try again later.';
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token, navigate, setFriends, setGroups, setFriendRequests]);
 
   const unreadNotifications = notifications.filter(n => !n.read).length;
   const unreadFriendRequests = friendRequests.filter(r => !r.read).length;
@@ -237,38 +284,47 @@ const Dashboard = () => {
 
             {activeTab === 0 && (
               <List>
-                {friends.slice(0, 5).map((friend) => (
-                  <React.Fragment key={friend._id}>
-                    <ListItem 
-                      button 
-                      onClick={() => handleStartChat(friend._id)}
-                      sx={{ borderRadius: 2, '&:hover': { bgcolor: 'action.hover' } }}
-                    >
-                      <ListItemAvatar>
-                        <Badge
-                          overlap="circular"
-                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          variant="dot"
-                          color={isUserOnline(onlineUsers, friend._id) ? 'success' : 'default'}
-                        >
-                          <Avatar src={friend.avatar} alt={friend.username} />
-                        </Badge>
-                      </ListItemAvatar>
-                      <ListItemText 
-                        primary={friend.username}
-                        primaryTypographyProps={{ fontWeight: 500 }}
-                        secondary={isUserOnline(onlineUsers, friend._id) ? 'Online' : 'Offline'}
-                      />
-                      <ListItemSecondaryAction>
-                        <IconButton edge="end" size="small">
-                          <ChatIcon />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                    <Divider variant="inset" component="li" />
-                  </React.Fragment>
-                ))}
-                {friends.length === 0 && (
+                {isLoading ? (
+                  <Box display="flex" justifyContent="center" p={3}>
+                    <CircularProgress />
+                  </Box>
+                ) : error ? (
+                  <Typography color="error" align="center" p={2}>
+                    {error}
+                  </Typography>
+                ) : friends && friends.length > 0 ? (
+                  friends.slice(0, 5).map((friend) => (
+                    <React.Fragment key={friend._id}>
+                      <ListItem 
+                        button 
+                        onClick={() => handleStartChat(friend._id)}
+                        sx={{ borderRadius: 2, '&:hover': { bgcolor: 'action.hover' } }}
+                      >
+                        <ListItemAvatar>
+                          <Badge
+                            overlap="circular"
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            variant="dot"
+                            color={isUserOnline(onlineUsers, friend._id) ? 'success' : 'default'}
+                          >
+                            <Avatar src={friend.avatar} alt={friend.username} />
+                          </Badge>
+                        </ListItemAvatar>
+                        <ListItemText 
+                          primary={friend.username}
+                          primaryTypographyProps={{ fontWeight: 500 }}
+                          secondary={isUserOnline(onlineUsers, friend._id) ? 'Online' : 'Offline'}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton edge="end" size="small">
+                            <ChatIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                      <Divider variant="inset" component="li" />
+                    </React.Fragment>
+                  ))
+                ) : (
                   <Box textAlign="center" py={4}>
                     <PeopleIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
                     <Typography color="text.secondary">
@@ -420,37 +476,50 @@ const Dashboard = () => {
           </Paper>
 
           {/* Online Friends */}
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
+          <Paper sx={{ p: 3, borderRadius: 2, mt: 2 }}>
             <Typography variant="subtitle1" fontWeight={600} mb={2}>
               Online Friends
             </Typography>
             <List>
-              {friends
-                .filter(friend => isUserOnline(onlineUsers, friend._id))
-                .slice(0, 5)
-                .map((friend) => (
-                  <ListItem key={friend._id} disableGutters>
-                    <ListItemAvatar>
-                      <Badge
-                        overlap="circular"
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        variant="dot"
-                        color="success"
-                      >
-                        <Avatar src={friend.avatar} alt={friend.username} />
-                      </Badge>
-                    </ListItemAvatar>
-                    <ListItemText 
-                      primary={friend.username}
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                    />
-                  </ListItem>
-                ))}
-              {friends.filter(friend => isUserOnline(onlineUsers, friend._id)).length === 0 && (
-                <Typography variant="body2" color="text.secondary" textAlign="center" py={2}>
-                  No friends online
+              {isLoading ? (
+                <Box display="flex" justifyContent="center" p={2}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : error ? (
+                <Typography variant="body2" color="error" textAlign="center" py={2}>
+                  {error}
                 </Typography>
-              )}
+              ) : !friends || friends.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" textAlign="center" py={2}>
+                  No friends added yet
+                </Typography>
+              ) : (() => {
+                const onlineFriends = friends.filter(friend => isUserOnline(onlineUsers, friend._id));
+                return onlineFriends.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" textAlign="center" py={2}>
+                    No friends online
+                  </Typography>
+                ) : (
+                  onlineFriends.slice(0, 5).map((friend) => (
+                    <ListItem key={friend._id} disableGutters>
+                      <ListItemAvatar>
+                        <Badge
+                          overlap="circular"
+                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                          variant="dot"
+                          color="success"
+                        >
+                          <Avatar src={friend.avatar} alt={friend.username} />
+                        </Badge>
+                      </ListItemAvatar>
+                      <ListItemText 
+                        primary={friend.username}
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                      />
+                    </ListItem>
+                  ))
+                );
+              })()}
             </List>
           </Paper>
         </Grid>
