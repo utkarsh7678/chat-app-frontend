@@ -9,17 +9,18 @@ import useStore from '../../store/useStore';
 const MainContent = styled(Box)(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
-  transition: theme.transitions.create('margin', {
+  transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   marginLeft: 0,
   marginTop: '64px',
   minHeight: 'calc(100vh - 64px)',
-  backgroundColor: theme.palette.background.default,
+  width: '100%',
+  backgroundColor: 'transparent',
   [theme.breakpoints.up('sm')]: {
-    marginLeft: '240px',
-    width: 'calc(100% - 240px)',
+    marginLeft: open ? '240px' : '0',
+    width: open ? 'calc(100% - 240px)' : '100%',
   },
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(2),
