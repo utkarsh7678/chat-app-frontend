@@ -114,7 +114,6 @@ const Header = () => {
   const { user, notifications, toggleSidebar, logout, toggleTheme, isOnline } = useStore();
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const cleanup = setupActivityListeners();
@@ -161,50 +160,51 @@ const Header = () => {
 
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
+  const { sidebarOpen } = useStore();
+  
   return (
-    <AppBar
-      position="fixed"
-      sx={{
-        width: { sm: `calc(100% - 240px)` },
-        ml: { sm: `240px` },
-        bgcolor: 'background.paper',
+    <AppBar 
+      position="fixed" 
+      sx={{ 
+        width: { sm: `calc(100% - ${sidebarOpen ? 240 : 0}px)` },
+        ml: { sm: `${sidebarOpen ? 240 : 0}px` },
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        backgroundColor: 'background.paper',
         color: 'text.primary',
         boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-        zIndex: theme.zIndex.drawer + 1,
-        transition: theme.transitions.create(['width', 'margin'], {
+        transition: (theme) => theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.leavingScreen,
         }),
       }}
     >
       <Toolbar disableGutters sx={{ px: 2 }}>
-        {isMobile && (
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="open drawer"
-            onClick={toggleSidebar}
-            sx={{ mr: 2, display: { sm: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-        )}
+        <IconButton
+          size="large"
+          edge="start"
+          color="inherit"
+          aria-label="open drawer"
+          onClick={toggleSidebar}
+          sx={{ 
+            mr: 2,
+            display: { xs: 'flex', md: 'none' } // Only show on mobile
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
 
-        {/* Search */}
-        <Search>
-          <SearchIconWrapper>
-            <SearchIcon />
-          </SearchIconWrapper>
-          <form onSubmit={handleSearch}>
-            <StyledInputBase
-              placeholder="Search messages, people..."
-              inputProps={{ 'aria-label': 'search' }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
-        </Search>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ 
+            display: { xs: 'none', sm: 'block' },
+            fontWeight: 600,
+            flexGrow: 1
+          }}
+        >
+          Dashboard
+        </Typography>
 
         <Box sx={{ flexGrow: 1 }} />
 
