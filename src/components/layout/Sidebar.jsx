@@ -27,6 +27,8 @@ import {
   Dashboard as DashboardIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Star as StarIcon,
   Mail as MailIcon,
   Settings as SettingsIcon,
@@ -79,11 +81,10 @@ const StyledDrawer = styled(Drawer)(({ theme, open }) => ({
 const Sidebar = ({ open, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const colors = getThemeColors();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const { friends, groups, friendRequests, onlineUsers, logout } = useStore();
+  const { user, onlineUsers, toggleSidebar, friends, groups, friendRequests, logout } = useStore();
+  const colors = getThemeColors();
   const [searchOpen, setSearchOpen] = useState(false);
   const [expanded, setExpanded] = useState({
     friends: true,
@@ -157,13 +158,71 @@ const Sidebar = ({ open, onClose }) => {
 
   return (
     <StyledDrawer
-      variant={isMobile ? 'temporary' : 'permanent'}
+      variant={isMobile ? 'temporary' : 'persistent'}
       open={open}
       onClose={onClose}
       ModalProps={{
         keepMounted: true, // Better open performance on mobile
       }}
     >
+      {/* Logo and Toggle */}
+      <Box 
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          minHeight: '64px',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <img 
+            src="/logo192.png" 
+            alt="Logo" 
+            style={{ 
+              width: '32px', 
+              height: '32px',
+              marginRight: '8px',
+              cursor: 'pointer',
+              borderRadius: '4px'
+            }}
+            onClick={() => navigate('/dashboard')}
+          />
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: colors.text.primary,
+              fontWeight: 600,
+              fontSize: '1.1rem',
+              '&:hover': {
+                cursor: 'pointer',
+                opacity: 0.8,
+              },
+            }}
+            onClick={() => navigate('/dashboard')}
+          >
+            ChatApp
+          </Typography>
+        </Box>
+        
+        <IconButton 
+          onClick={toggleSidebar}
+          size="small"
+          sx={{
+            color: colors.text.secondary,
+            '&:hover': {
+              backgroundColor: theme.palette.action.hover,
+            },
+          }}
+        >
+          {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
+      </Box>
       <Box sx={{ 
         display: 'flex', 
         flexDirection: 'column',
